@@ -1,23 +1,23 @@
-import { app } from "./firebase";
+// import { app } from "./firebase";
 // import { getFirestore } from "firebase/firestore";
 import {
   getFirestore,
   doc,
-  collection,
-  query,
-  where,
-  getDocs,
+  // collection,
+  // query,
+  // where,
+  // getDocs,
   getDoc,
-  addDoc,
+  // addDoc,
   setDoc,
   updateDoc,
   arrayUnion,
-  arrayRemove,
-  FieldPath,
+  // arrayRemove,
+  // FieldPath,
   onSnapshot,
   connectFirestoreEmulator,
-  getDocFromCache,
-  serverTimestamp,
+  // getDocFromCache,
+  // serverTimestamp,
 } from "firebase/firestore";
 
 const db = getFirestore();
@@ -76,7 +76,7 @@ export async function updateMeasuredItem(docId: string, data: any) {
 export async function fetchMeasuredTime(
   docId: string,
   onUpdate: any,
-  where?: any
+  // where?: any
 ) {
   const collectionName = "MeasuredTime";
   const docRef = doc(db, collectionName, docId);

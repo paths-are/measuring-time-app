@@ -2,10 +2,7 @@ import * as React from "react";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import ProTip from "../src/ProTip";
-import Link from "../src/Link";
-import Copyright from "../src/Copyright";
-import { Button, IconButton, Stack, TextField } from "@mui/material";
+import { Button, TextField } from "@mui/material";
 
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -18,7 +15,6 @@ import { useUser, login, logout } from "@/src/lib/auth";
 // import { useUser as useUserDoc } from "@/src/lib/firestore/useUser";
 import {
   fetchMeasuredItem,
-  updateMeasuredItem,
   addMeasuredItem,
   updateMeasuredTime,
   fetchMeasuredTime,
@@ -31,33 +27,6 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 
-const measuredItem = [
-  {
-    _id: "aaa-aaaa1",
-    name: "SBWorks",
-    category: "work1",
-    color: "yellow",
-  },
-  {
-    _id: "aaa-aaaa2",
-    name: "Bees開発",
-    category: "work2",
-    color: "blue",
-  },
-  {
-    _id: "aaa-aaaa3",
-    name: "お昼休憩",
-    category: "休憩",
-    color: "skyblue",
-  },
-  {
-    _id: "aaa-aaaa4",
-    name: "トイレ",
-    category: "休憩",
-    color: "pink",
-  },
-];
-
 function formatDate(dateobject: Date, format: string) {
   const pad = (n: number) => (n > 9 ? n : "0" + n);
   dateobject = new Date(dateobject);
@@ -66,15 +35,12 @@ function formatDate(dateobject: Date, format: string) {
   const date = dateobject.getDate();
   const hours = pad(dateobject.getHours());
   const minutes = pad(dateobject.getMinutes());
-  const secounds = pad(dateobject.getSeconds());
+  // const secounds = pad(dateobject.getSeconds());
   // return `${year}/${month}/${date} ${hours}:${minutes}:${secounds}`;
   // return `${hours}:${minutes}:${secounds}`;
   if (format === "hh:mm") return `${hours}:${minutes}`;
   if (format === "YYYYMMDD") return `${year}${month}${date}`;
   return `${year}${month}${date}`;
-}
-function toSecounds(diff: number) {
-  return;
 }
 /**
  * 任意の桁で切り捨てする関数
@@ -94,14 +60,6 @@ function createData(
 ) {
   return { name, calories, fat, carbs, protein };
 }
-
-const rows = [
-  createData("Frozen yoghurt", 159, 6.0, 24, 4.0),
-  createData("Ice cream sandwich", 237, 9.0, 37, 4.3),
-  createData("Eclair", 262, 16.0, 24, 6.0),
-  createData("Cupcake", 305, 3.7, 67, 4.3),
-  createData("Gingerbread", 356, 16.0, 49, 3.9),
-];
 
 const MeasuredItems = (props: any) => {
   console.log("MeasuredItems:render");
@@ -169,7 +127,7 @@ const MeasuredItems = (props: any) => {
             追加
           </Button>
         </Box>
-        {items?.map((item: any, index: number) => {
+        {items?.map((item: any) => {
           const _id = item["_id"];
           if (_id)
             return (
@@ -216,15 +174,15 @@ const MeasuredTimesTable = React.memo((props: any) => {
               (item: any) => item["_id"] === time["_id"]
             );
 
-            function timeToDate(time: any) {
-              // if (typeof time.toDate() === "function") {
-              if (typeof time.toDate() === "object") {
-                // if (typeof time === "object") {
-                return time.toDate();
-              } else {
-                return time;
-              }
-            }
+            // function timeToDate(time: any) {
+            //   // if (typeof time.toDate() === "function") {
+            //   if (typeof time.toDate() === "object") {
+            //     // if (typeof time === "object") {
+            //     return time.toDate();
+            //   } else {
+            //     return time;
+            //   }
+            // }
 
             console.log(time);
             return (
@@ -276,13 +234,13 @@ export default function Index() {
   // const [dialogOpen, setDialogOpen] = React.useState(false);
   const [globalCount, setGlobalCount] = React.useState(0); // globalカウント用
   const intervalRef = React.useRef<any>(null); // globalカウント用
-  const [allCounts, setAllCounts] = React.useState({}); // カウント秒付きのItems
+  // const [allCounts, setAllCounts] = React.useState({}); // カウント秒付きのItems
   // const [activeId, setActiveId] = React.useState<string | null>(null); // 現在動いているItem
   // const [activeItemName, setActiveItemName] = React.useState<string | null>(
   //   null
   // ); // 現在動いているItem
   // const [times, setTimes] = React.useState([]); // 今日分の分析用
-  const [times, setTimes] = React.useState<any>(null); // 今日分の分析用
+  // const [times, setTimes] = React.useState<any>(null); // 今日分の分析用
   // const [measuringTime, setMeasuringTime] = React.useState<any>(null); //現在計測中の時間
 
   const [measure, setMeasure] = React.useState<any>({
@@ -424,7 +382,7 @@ export default function Index() {
     console.log("measure.measuringItem:update");
     console.log(measure.measuringItem);
     if (measure.measuringItem.isActive) {
-      console.log(measure)
+      console.log(measure);
       const now = new Date();
       const yyyymmdd = formatDate(now, "YYYYMMDD");
       updateMeasuredTime(user.uid, yyyymmdd, measure);
