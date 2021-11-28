@@ -22,3 +22,5 @@ firestore-debug.log
 firebase.json
 .firebaserc
 firestore.indexes.json
+functions/src/index.ts
+functions/

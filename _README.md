@@ -17,7 +17,7 @@ Install it and run:
 npm install
 npm run dev
 ```
-
+GIT_SSH_COMMAND='ssh -i ~/.ssh/paths-are/id_ed25519' git push origin main
 or:
 
 <!-- #default-branch-switch -->
