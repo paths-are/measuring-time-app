@@ -1,0 +1,33 @@
+{
+  "name": "timer-app",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "@emotion/cache": "latest",
+    "@emotion/react": "latest",
+    "@emotion/server": "latest",
+    "@emotion/styled": "latest",
+    "@mui/material": "latest",
+    "clsx": "latest",
+    "firebase": "^9.5.0",
+    "next": "latest",
+    "react": "latest",
+    "react-dom": "latest",
+    "recoil": "^0.5.2",
+    "uuid": "^8.3.2"
+  },
+  "scripts": {
+    "dev:client": "next",
+    "dev:firebase": "cd functions && npm run build && cd .. && firebase emulators:start",
+    "build": "next build",
+    "start": "next start",
+    "post-update": "echo \"codesandbox preview only, need an update\" && yarn upgrade --latest"
+  },
+  "devDependencies": {
+    "@types/node": "latest",
+    "@types/react": "latest",
+    "@types/react-dom": "latest",
+    "@types/uuid": "^8.3.3",
+    "typescript": "latest"
+  }
+}
