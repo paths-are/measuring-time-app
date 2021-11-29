@@ -343,8 +343,8 @@ export default function Index() {
     setItems(items);
   };
   const renderMeasuredTimesTable = (res: any): void => {
-    // const today = formatDate(new Date(), "YYYYMMDD");
-    const today = formatDate(new Date("2021/11/29 11:11:11"), "YYYYMMDD");
+    const today = formatDate(new Date(), "YYYYMMDD");
+    // const today = formatDate(new Date("2021/11/29 11:11:11"), "YYYYMMDD");
     console.log(res[today]);
     // return
     if (today in res) {
