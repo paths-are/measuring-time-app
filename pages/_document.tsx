@@ -10,6 +10,7 @@ export default class MyDocument extends Document {
       <Html lang="en">
         <Head>
           {/* PWA primary color */}
+          <link rel="shortcut icon" href="/favicons/01.png" />
           <meta name="theme-color" content={theme.palette.primary.main} />
           <link
             rel="stylesheet"

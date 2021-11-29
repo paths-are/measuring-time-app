@@ -40,6 +40,7 @@ function formatDate(dateobject: Date, format: string) {
   // return `${hours}:${minutes}:${secounds}`;
   if (format === "hh:mm") return `${hours}:${minutes}`;
   if (format === "YYYYMMDD") return `${year}${month}${date}`;
+  if (format === "YYYY/MM/DD") return `${year}/${month}/${date}`;
   return `${year}${month}${date}`;
 }
 /**
@@ -53,11 +54,12 @@ function orgFloor(value: number, base: number) {
 }
 
 const MeasuredItems = (props: any) => {
-  console.log("MeasuredItems:render");
+  // console.log("MeasuredItems:render");
   const { items, measure, handleClickItem, handleShowItems } = props;
   const user: any = useUser();
   const [newItem, setNewItem] = React.useState("");
   const [dialogOpen, setDialogOpen] = React.useState(false);
+  const [totalTimes, setTotalTimes] = React.useState<any>({});
 
   const handleClickDialogOpen = () => {
     setDialogOpen(true);
@@ -87,6 +89,26 @@ const MeasuredItems = (props: any) => {
     };
     if (user) init();
   }, [user]);
+  React.useEffect(() => {
+    const init = async () => {
+      let totalTimes: any = {};
+      measure.times?.map((time: any) => {
+        console.log(
+          time,
+          formatDate(time.start, "hh:mm"),
+          (time.end - time.start) / 1000
+        );
+        const _id = time["_id"];
+
+        totalTimes[_id] = totalTimes[_id]
+          ? totalTimes[_id] + (time.end - time.start) / 1000
+          : (time.end - time.start) / 1000;
+      });
+      setTotalTimes(totalTimes);
+    };
+    if (user) init();
+  }, [measure.times]);
+
   return (
     <>
       <Dialog open={dialogOpen} onClose={handleDialogClose}>
@@ -122,18 +144,25 @@ const MeasuredItems = (props: any) => {
           const _id = item["_id"];
           if (_id)
             return (
-              <Box key={_id} sx={{ mb: 1 }}>
+              <Box
+                key={_id}
+                sx={{ mb: 1, display: "flex", alignItems: "center" }}
+              >
                 <Button
                   variant={
                     measure.measuringItem?.["_id"] === _id
                       ? "outlined"
                       : "contained"
                   }
-                  fullWidth
                   onClick={() => handleClickItem(_id)}
+                  sx={{
+                    flexGrow: 1,
+                    mr: 1,
+                  }}
                 >
                   {item.name}
                 </Button>
+                <Typography>{orgFloor(totalTimes[_id] / 60, 2)}分</Typography>
               </Box>
             );
         })}
@@ -156,7 +185,7 @@ const MeasuredTimesTable = React.memo((props: any) => {
             <TableCell>項目</TableCell>
             <TableCell align="right">開始</TableCell>
             <TableCell align="right">終了</TableCell>
-            <TableCell align="right">時間</TableCell>
+            <TableCell align="right">時間(分)</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -165,17 +194,7 @@ const MeasuredTimesTable = React.memo((props: any) => {
               (item: any) => item["_id"] === time["_id"]
             );
 
-            // function timeToDate(time: any) {
-            //   // if (typeof time.toDate() === "function") {
-            //   if (typeof time.toDate() === "object") {
-            //     // if (typeof time === "object") {
-            //     return time.toDate();
-            //   } else {
-            //     return time;
-            //   }
-            // }
-
-            console.log(time);
+            // console.log(time);
             return (
               <TableRow
                 key={index}
@@ -188,26 +207,12 @@ const MeasuredTimesTable = React.memo((props: any) => {
                 </TableCell>
                 <TableCell align="right">
                   {formatDate(time.start, "hh:mm")}
-                  {/* {formatDate(time.start.toDate(), "hh:mm")} */}
-                  {/* {formatDate(timeToDate(time.start), "hh:mm")} */}
                 </TableCell>
                 <TableCell align="right">
                   {formatDate(time.end, "hh:mm")}
-                  {/* {formatDate(time.end.toDate(), "hh:mm")} */}
-                  {/* {formatDate(timeToDate(time.end), "hh:mm")} */}
                 </TableCell>
                 <TableCell align="right">
-                  {orgFloor((time.end - time.start) / 1000, 2)}
-                  {/* {Math.floor((time.end - time.start) / 1000)}秒 */}
-                  {/* {orgFloor(
-                    (time.end.toDate() - time.start.toDate()) / 1000,
-                    2
-                  )} */}
-                  {/* {orgFloor(
-                    (timeToDate(time.end) - timeToDate(time.start)) / 1000,
-                    2
-                  )} */}
-                  秒
+                  {orgFloor((time.end - time.start) / 1000 / 60, 2)}
                 </TableCell>
               </TableRow>
             );
@@ -253,12 +258,6 @@ export default function Index() {
       return;
     }
     intervalRef.current = setInterval(() => {
-      // measure.totalMeasuredTime += 1;
-      // let newData = Object.assign({}, measure);
-      // setMeasure(newData);
-      // const time = measure.totalMeasuredTime + 1;
-      // setMeasure({ ...measure, totalMeasuredTime: time });
-      // setMeasure({ ...measure, totalMeasuredTime: (c: number) => c + 1 });
       setGlobalCount((c: number) => c + 1);
     }, 1000);
   }, []);
@@ -344,7 +343,8 @@ export default function Index() {
     setItems(items);
   };
   const renderMeasuredTimesTable = (res: any): void => {
-    const today = formatDate(new Date(), "YYYYMMDD");
+    // const today = formatDate(new Date(), "YYYYMMDD");
+    const today = formatDate(new Date("2021/11/29 11:11:11"), "YYYYMMDD");
     console.log(res[today]);
     // return
     if (today in res) {
@@ -363,10 +363,42 @@ export default function Index() {
     console.log("measure.times:update");
     console.log(measure.times);
     if (measure.times) {
-      const now = new Date();
-      const yyyymmdd = formatDate(now, "YYYYMMDD");
-      // updateMeasuredTime(user.uid, yyyymmdd, measure.times);
-      updateMeasuredTime(user.uid, yyyymmdd, measure);
+      // 最後に追加されたデータの開始日付と終了日付が一緒ならば、
+      // 　そのままDBに保存。
+      // もし、違うならば
+      //   endを23:59:59に設定し、
+      // 　新しい日付でデータを作成する
+      const length = measure.times.length;
+      const lastStart = measure.times[length - 1].start;
+      const lastEnd = measure.times[length - 1].end;
+      if (
+        formatDate(lastStart, "YYYYMMDD") === formatDate(lastEnd, "YYYYMMDD")
+      ) {
+        const yyyymmdd = formatDate(
+          measure.times[length - 1].start,
+          "YYYYMMDD"
+        );
+        updateMeasuredTime(user.uid, yyyymmdd, measure);
+      } else {
+        const oneDaySec = 60 * 60 * 24; //86400
+        const addSec = oneDaySec - 1;
+        const lastStartDate = formatDate(lastStart, "YYYYMMDD");
+        const lastEndTime = new Date(lastStartDate).getTime() + addSec * 1000;
+        let data = measure;
+        data.times[length - 1].end = lastEndTime;
+        updateMeasuredTime(user.uid, lastStartDate, data);
+
+        const startTime = lastEndTime + 1 * 1000; // 前の終了時間（23:59:59） + 2秒 = 00:00:00
+        const endTime = lastEnd;
+        data.times = [
+          {
+            _id: data.measuringItem["_id"],
+            start: startTime,
+            end: endTime,
+          },
+        ];
+        updateMeasuredTime(user.uid, lastStartDate, data);
+      }
     }
   }, [measure.times]);
   React.useEffect(() => {
@@ -390,6 +422,46 @@ export default function Index() {
     console.log(measure);
   }, [measure]);
 
+  const renderMeasingItem = (measuringItem: any) => {
+    // const [time, setTime] = React.useState(0);
+    // const intervalRef = React.useRef<any>(null); // globalカウント用
+    // const start = React.useCallback(() => {
+    //   if (intervalRef.current !== null) {
+    //     return;
+    //   }
+    //   intervalRef.current = setInterval(() => {
+    //     setTime((c: number) => c + 1);
+    //   }, 1000);
+    // }, []);
+    // const stop = React.useCallback(() => {
+    //   if (intervalRef.current === null) {
+    //     return;
+    //   }
+    //   clearInterval(intervalRef.current);
+    //   intervalRef.current = null;
+    // }, []);
+
+    // React.useEffect(() => {
+    //   start();
+    // }, []);
+
+    if (measuringItem?.name) {
+      return (
+        <Box>
+          <Typography align="center">
+            計測中のアイテム：{measuringItem.name}
+          </Typography>
+          <Typography align="center">
+            開始時間：{formatDate(measuringItem.start, "hh:mm")}
+          </Typography>
+          {/* <Typography align="center">経過時間：{time}</Typography> */}
+        </Box>
+      );
+    } else {
+      return null;
+    }
+  };
+
   return (
     <Container maxWidth="sm" sx={{ pb: 4 }}>
       <div>
@@ -408,10 +480,12 @@ export default function Index() {
               <Box>
                 <Typography align="center">
                   {/* 計測中のアイテム：{activeItemName} */}
-                  計測中のアイテム：
-                  {measure.measuringItem?.name
+                  {/* 計測中のアイテム： */}
+                  {renderMeasingItem(measure.measuringItem)}
+                  {/* {<RenderMeasingItem measuringItem={measure.measuringItem} />} */}
+                  {/* {measure.measuringItem?.name
                     ? measure.measuringItem.name
-                    : null}
+                    : null} */}
                 </Typography>
               </Box>
               <MeasuredItems

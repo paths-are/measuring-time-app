@@ -16,13 +16,23 @@
     "recoil": "^0.5.2",
     "uuid": "^8.3.2"
   },
+  "config":{
+    "name":"shinji",
+    "pid":"timer-app-d0e7e",
+    "firestoreOutDir":"20211129"
+  },
   "scripts": {
     "dev:client": "set NEXT_PUBLIC_MODE=LOCAL_DEVELOP&& next",
+    "dev:client::auth-prod": "set NEXT_PUBLIC_MODE=LOCAL_DEVELOP&& set NEXT_PUBLIC_MODE_AUTH=PROD&& next",
     "dev:firebase": "firebase emulators:start",
     "build": "next build",
     "start": "next start",
     "post-update": "echo \"codesandbox preview only, need an update\" && yarn upgrade --latest",
-    "deploy:functions:only": "firebase deploy --only functions:createUserDocument"
+    "deploy:functions::only": "firebase deploy --only functions:createUserDocument",
+    "__desc":"１．firestoreのデータをエクスポート。２．firestoreのデータをローカルにコピー。３．コピーしたデータをインポートして、emulatorsをスタート",
+    "1.firestore:export": "gcloud config set project %npm_package_config_pid% && gcloud firestore export gs://%npm_package_config_pid%.appspot.com/%npm_package_config_firestoreOutDir%",
+    "2.firestore:import": "gsutil -m cp -r gs://%npm_package_config_pid%.appspot.com/%npm_package_config_firestoreOutDir% ./functions/%npm_package_config_firestoreOutDir%",
+    "3.dev:firebase::import": "firebase emulators:start --import functions/%npm_package_config_firestoreOutDir%/"
   },
   "devDependencies": {
     "@types/node": "latest",

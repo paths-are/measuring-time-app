@@ -13,8 +13,10 @@ import {
 import { app } from "./firebase";
 
 const auth = getAuth(app);
-if (process.env.NEXT_PUBLIC_MODE === "LOCAL_DEVELOP") {
-  connectAuthEmulator(auth, "http://localhost:9099");
+if (process.env.NEXT_PUBLIC_MODE_AUTH !== "PROD") {
+  if (process.env.NEXT_PUBLIC_MODE === "LOCAL_DEVELOP") {
+    connectAuthEmulator(auth, "http://localhost:9099");
+  }
 }
 
 type UserState = User | null;
