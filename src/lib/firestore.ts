@@ -29,6 +29,7 @@ connectFirestoreEmulator(db, "localhost", 8080);
 export async function fetchMeasuredItem(docId: string, onUpdate: any, q?: any) {
   const collectionName = "MeasuredItem";
   const docRef = doc(db, collectionName, docId);
+  console.log(q)
   onSnapshot(docRef, async (doc) => {
     if (doc.exists()) {
       console.log(doc.data());
