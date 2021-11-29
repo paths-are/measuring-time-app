@@ -51,15 +51,6 @@ function formatDate(dateobject: Date, format: string) {
 function orgFloor(value: number, base: number) {
   return Math.floor(value * base) / base;
 }
-function createData(
-  name: any,
-  calories: any,
-  fat: any,
-  carbs: any,
-  protein: any
-) {
-  return { name, calories, fat, carbs, protein };
-}
 
 const MeasuredItems = (props: any) => {
   console.log("MeasuredItems:render");
