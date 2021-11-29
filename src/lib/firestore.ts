@@ -21,7 +21,7 @@ import {
 } from "firebase/firestore";
 
 const db = getFirestore();
-if (process.env.mode === "DEVELOP_LOCAL") {
+if (process.env.NEXT_PUBLIC_MODE === "LOCAL_DEVELOP") {
   connectFirestoreEmulator(db, "localhost", 8080);
 }
 

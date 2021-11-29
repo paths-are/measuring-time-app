@@ -13,7 +13,7 @@ import {
 import { app } from "./firebase";
 
 const auth = getAuth(app);
-if (process.env.mode === "DEVELOP_LOCAL") {
+if (process.env.NEXT_PUBLIC_MODE === "LOCAL_DEVELOP") {
   connectAuthEmulator(auth, "http://localhost:9099");
 }
 
