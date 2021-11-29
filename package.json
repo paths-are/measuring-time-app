@@ -17,7 +17,7 @@
     "uuid": "^8.3.2"
   },
   "scripts": {
-    "dev:client": "next",
+    "dev:client": "set MODE=LOCAL_DEV && next",
     "dev:firebase": "cd functions && npm run build && cd .. && firebase emulators:start",
     "build": "next build",
     "start": "next start",

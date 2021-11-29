@@ -15,13 +15,15 @@ import {
   // arrayRemove,
   // FieldPath,
   onSnapshot,
-  connectFirestoreEmulator,
   // getDocFromCache,
   // serverTimestamp,
+  connectFirestoreEmulator,
 } from "firebase/firestore";
 
 const db = getFirestore();
-connectFirestoreEmulator(db, "localhost", 8080);
+if (process.env.mode === "DEVELOP_LOCAL") {
+  connectFirestoreEmulator(db, "localhost", 8080);
+}
 
 /**
  * MeasuredItem
@@ -29,7 +31,7 @@ connectFirestoreEmulator(db, "localhost", 8080);
 export async function fetchMeasuredItem(docId: string, onUpdate: any, q?: any) {
   const collectionName = "MeasuredItem";
   const docRef = doc(db, collectionName, docId);
-  console.log(q)
+  console.log(q);
   onSnapshot(docRef, async (doc) => {
     if (doc.exists()) {
       console.log(doc.data());
@@ -76,7 +78,7 @@ export async function updateMeasuredItem(docId: string, data: any) {
  */
 export async function fetchMeasuredTime(
   docId: string,
-  onUpdate: any,
+  onUpdate: any
   // where?: any
 ) {
   const collectionName = "MeasuredTime";
