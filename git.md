@@ -1,1 +1,0 @@
-GIT_SSH_COMMAND='ssh -i ~/.ssh/paths-are/id_ed25519' git push origin main
