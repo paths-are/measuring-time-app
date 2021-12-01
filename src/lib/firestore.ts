@@ -3,12 +3,13 @@
 import {
   getFirestore,
   doc,
-  // collection,
+  // DocumentReference,
+  collection,
   // query,
   // where,
   // getDocs,
   getDoc,
-  // addDoc,
+  addDoc,
   setDoc,
   updateDoc,
   arrayUnion,
@@ -28,6 +29,69 @@ if (process.env.NEXT_PUBLIC_MODE === "LOCAL_DEVELOP") {
 /**
  * MeasuredItem
  */
+export async function addCollectionTest() {
+  // const citiesRef = collection(db, "cities");
+
+  // collection(db, "cities", "SF");
+  // db.collection()
+
+  // const messageRef = db.collection('rooms').doc('roomA')
+  // .collection('messages').doc('message1');
+  // const docRef = doc(db, "cities", "SF", "sub","HMhnoBgSN7i1sSMBNol4");
+
+  // console.log(docRef)
+
+  const collectionRef = collection(db, "collection", "doc1", "sub-col1");
+  
+  // Docment ID 自動生成
+  await addDoc(collectionRef, {
+    name: "Tokyo",
+    country: "Japan"
+  });
+
+  // Docment ID 指定（すでにある場合は上書き）
+  await setDoc(doc(collectionRef, "SF"), {
+    name: "San Francisco",
+    state: "CA",
+    country: "USA",
+    capital: false,
+    population: 860000,
+    regions: ["west_coast", "norcal"],
+  });
+  await setDoc(doc(collectionRef, "LA"), {
+    name: "Los Angeles",
+    state: "CA",
+    country: "USA",
+    capital: false,
+    population: 3900000,
+    regions: ["west_coast", "socal"],
+  });
+  await setDoc(doc(collectionRef, "DC"), {
+    name: "Washington, D.C.",
+    state: null,
+    country: "USA",
+    capital: true,
+    population: 680000,
+    regions: ["east_coast"],
+  });
+  await setDoc(doc(collectionRef, "TOK"), {
+    name: "Tokyo",
+    state: null,
+    country: "Japan",
+    capital: true,
+    population: 9000000,
+    regions: ["kanto", "honshu"],
+  });
+  await setDoc(doc(collectionRef, "BJ"), {
+    name: "Beijing",
+    state: null,
+    country: "China",
+    capital: true,
+    population: 21500000,
+    regions: ["jingjinji", "hebei"],
+  });
+}
+
 export async function fetchMeasuredItem(docId: string, onUpdate: any, q?: any) {
   const collectionName = "MeasuredItem";
   const docRef = doc(db, collectionName, docId);

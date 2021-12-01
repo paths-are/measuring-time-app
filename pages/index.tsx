@@ -2,7 +2,7 @@ import * as React from "react";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import { Button, TextField } from "@mui/material";
+import { Button, TextField, IconButton } from "@mui/material";
 
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -18,6 +18,7 @@ import {
   addMeasuredItem,
   updateMeasuredTime,
   fetchMeasuredTime,
+  // addCollectionTest,
 } from "@/src/lib/firestore";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -26,13 +27,14 @@ import TableContainer from "@mui/material/TableContainer";
 import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 function formatDate(dateobject: Date, format: string) {
   const pad = (n: number) => (n > 9 ? n : "0" + n);
   dateobject = new Date(dateobject);
   const year = dateobject.getFullYear();
-  const month = dateobject.getMonth() + 1;
-  const date = dateobject.getDate();
+  const month = pad(dateobject.getMonth() + 1);
+  const date = pad(dateobject.getDate());
   const hours = pad(dateobject.getHours());
   const minutes = pad(dateobject.getMinutes());
   // const secounds = pad(dateobject.getSeconds());
@@ -81,6 +83,11 @@ const MeasuredItems = (props: any) => {
 
   const handleOnChange = (e: any): void => {
     setNewItem(e.target.value);
+  };
+
+  const handleItemDelete = (_id: string): void => {
+    console.log(_id);
+    // addCollectionTest();
   };
 
   React.useEffect(() => {
@@ -148,6 +155,9 @@ const MeasuredItems = (props: any) => {
                 key={_id}
                 sx={{ mb: 1, display: "flex", alignItems: "center" }}
               >
+                <IconButton onClick={() => handleItemDelete(_id)}>
+                  <DeleteIcon />
+                </IconButton>
                 <Button
                   variant={
                     measure.measuringItem?.["_id"] === _id
@@ -162,7 +172,9 @@ const MeasuredItems = (props: any) => {
                 >
                   {item.name}
                 </Button>
-                <Typography>{orgFloor(totalTimes[_id] / 60, 2)}分</Typography>
+                <Typography>
+                  {totalTimes[_id] ? orgFloor(totalTimes[_id] / 60, 2) : "-"}分
+                </Typography>
               </Box>
             );
         })}
@@ -363,42 +375,9 @@ export default function Index() {
     console.log("measure.times:update");
     console.log(measure.times);
     if (measure.times) {
-      // 最後に追加されたデータの開始日付と終了日付が一緒ならば、
-      // 　そのままDBに保存。
-      // もし、違うならば
-      //   endを23:59:59に設定し、
-      // 　新しい日付でデータを作成する
-      const length = measure.times.length;
-      const lastStart = measure.times[length - 1].start;
-      const lastEnd = measure.times[length - 1].end;
-      if (
-        formatDate(lastStart, "YYYYMMDD") === formatDate(lastEnd, "YYYYMMDD")
-      ) {
-        const yyyymmdd = formatDate(
-          measure.times[length - 1].start,
-          "YYYYMMDD"
-        );
-        updateMeasuredTime(user.uid, yyyymmdd, measure);
-      } else {
-        const oneDaySec = 60 * 60 * 24; //86400
-        const addSec = oneDaySec - 1;
-        const lastStartDate = formatDate(lastStart, "YYYYMMDD");
-        const lastEndTime = new Date(lastStartDate).getTime() + addSec * 1000;
-        let data = measure;
-        data.times[length - 1].end = lastEndTime;
-        updateMeasuredTime(user.uid, lastStartDate, data);
-
-        const startTime = lastEndTime + 1 * 1000; // 前の終了時間（23:59:59） + 2秒 = 00:00:00
-        const endTime = lastEnd;
-        data.times = [
-          {
-            _id: data.measuringItem["_id"],
-            start: startTime,
-            end: endTime,
-          },
-        ];
-        updateMeasuredTime(user.uid, lastStartDate, data);
-      }
+      const now = new Date();
+      const yyyymmdd = formatDate(now, "YYYYMMDD");
+      updateMeasuredTime(user.uid, yyyymmdd, measure);
     }
   }, [measure.times]);
   React.useEffect(() => {
