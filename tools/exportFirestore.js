@@ -1,8 +1,3 @@
-// import { initializeApp, applicationDefault, cert } from "firebase-admin/app";
-// import { getFirestore, Timestamp, FieldValue } from "firebase-admin/firestore";
-// import fs from "fs/promises";
-// import dateFormat, { masks } from "dateformat";
-
 const {
   initializeApp,
   applicationDefault,
@@ -14,7 +9,45 @@ const {
   FieldValue,
 } = require("firebase-admin/firestore");
 const fs = require("fs/promises");
-// const dateFormat =  require("dateformat");
+var admin = require("firebase-admin");
+
+
+/**
+ * 
+ * typee measuredTimeData {
+ *   YYYYMMDD:{
+ *    measuringItem:
+ *    times:{
+ * 
+ *    }
+ *   }
+ * }
+ * 
+ * 現状
+ * Users/:userid/userdata
+ * MeasuredTimes/:userid/measuredTimeData
+ * 
+ * 
+ * structure 案 改修後
+ * 
+ * type measuredTimeData {
+ *  start:number;
+ *  end:number;
+ *  _itemId:refference(MeasuredItem.id)
+ * }
+ * 
+ * Users/:userid/userdata
+ * 
+ * Users/:userId/MeasuredTimes/:measuredTimeId/measuredTimeData1
+ *                            /:measuredTimeId/measuredTimeData2
+ *                            /:measuredTimeId/measuredTimeData3
+ *                            /:measuredTimeId/measuredTimeData4
+ * 
+ * Users/:userId/MeasuredTimes/:measuredTimeId/measuredTimeData1
+ *                            /:measuredItemId/measuredItemData2
+ *                            /:measuredItemId/measuredItemData3
+ */
+
 
 const nowFormat = () => {
   const now = new Date();
@@ -31,15 +64,19 @@ const nowFormat = () => {
 };
 
 // 本番環境接続時
-// const serviceAccount = require('./path/to/serviceAccountKey.json');
-// initializeApp({
+/**
+ * TODO : FIRESTORE_EMULATOR_HOSTが環境変数に設定してあれば、削除する必要がある
+ */
+// bash : export -n FIRESTORE_EMULATOR_HOST // 削除するとき
+// const serviceAccount = require('./serviceAccountKey.json');
+// admin.initializeApp({
 //   credential: cert(serviceAccount)
 // });
 
 /**
  * TODO : ローカルエミュレータに接続するには、ターミナル起動後に下記コマンドを実行する必要がある
  */
-// bash : export FIRESTORE_EMULATOR_HOST="localhost:8080"
+// bash : export FIRESTORE_EMULATOR_HOST="localhost:8080" // 設定するとき
 //
 // initializeApp({ projectId: "your-project-id" });
 initializeApp();
@@ -66,6 +103,7 @@ exports.exportCollectionData = async (collectionName) => {
 
   const json = { [collectionName]: [] };
   snapshot.forEach((doc) => {
+    // console.log(doc.id, " => ",doc.data())
     const docment = {
       [doc.id]: doc.data(),
     };
@@ -92,7 +130,7 @@ exports.exportCollectionData = async (collectionName) => {
 exports.importJsonToFirestore = async () => {
   // const collectionName = "MeasuredItem";
   const json = require("./exports/20211201_0046_MeasuredItem.json");
-  
+
   for (const measuredItem of json["MeasuredItem"]) {
     // console.log(measuredItem);
     for (const key in measuredItem) {

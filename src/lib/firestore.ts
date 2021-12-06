@@ -13,7 +13,7 @@ import {
   setDoc,
   updateDoc,
   arrayUnion,
-  // arrayRemove,
+  arrayRemove,
   // FieldPath,
   onSnapshot,
   // getDocFromCache,
@@ -42,11 +42,11 @@ export async function addCollectionTest() {
   // console.log(docRef)
 
   const collectionRef = collection(db, "collection", "doc1", "sub-col1");
-  
+
   // Docment ID 自動生成
   await addDoc(collectionRef, {
     name: "Tokyo",
-    country: "Japan"
+    country: "Japan",
   });
 
   // Docment ID 指定（すでにある場合は上書き）
@@ -92,17 +92,36 @@ export async function addCollectionTest() {
   });
 }
 
-export async function fetchMeasuredItem(docId: string, onUpdate: any, q?: any) {
+export async function deleteMeasuredItem(docId: string, removeItem: any) {
   const collectionName = "MeasuredItem";
   const docRef = doc(db, collectionName, docId);
-  console.log(q);
+  
+  await updateDoc(docRef, {
+    items: arrayRemove(removeItem),
+  });
+
+  let newData = {
+    ...removeItem,
+    isDelete: true,
+  };
+
+  await updateDoc(docRef, {
+    items: arrayUnion(newData),
+  });
+
+  return;
+}
+
+export async function fetchMeasuredItem(docId: string, onUpdate: any) {
+  const collectionName = "MeasuredItem";
+  const docRef = doc(db, collectionName, docId);
   onSnapshot(docRef, async (doc) => {
     if (doc.exists()) {
-      console.log(doc.data());
       const data = doc.data();
+      // console.log("onUpdate----");
       onUpdate(data.items);
     } else {
-      console.log("No such document!");
+      console.log("fetchMeasuredItem -> No such document!");
     }
   });
 }
@@ -150,6 +169,7 @@ export async function fetchMeasuredTime(
 
   onSnapshot(docRef, async (doc) => {
     if (doc.exists()) {
+      console.log("fetchMeasuredTime---")
       console.log(doc.data());
       const data = doc.data();
       onUpdate(data);
@@ -163,22 +183,22 @@ export async function updateMeasuredTime(
   key: string,
   data: any
 ) {
-  console.log(data);
+  // console.log(data);
   const collectionName = "MeasuredTime";
   const docRef = doc(db, collectionName, docId);
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    console.log("hello----0");
+    // console.log("hello----0");
     // TODO:差分だけ更新するようにしたい
     const res = await updateDoc(docRef, {
       [key]: data,
     });
-    console.log("res----");
+    // console.log("res----");
     console.log(res);
   } else {
-    console.log("hello----1");
+    // console.log("hello----1");
     const res = await setDoc(docRef, { [key]: data });
-    console.log("res----");
+    // console.log("res----");
     console.log(res);
   }
 }

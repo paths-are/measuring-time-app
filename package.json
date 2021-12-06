@@ -19,7 +19,7 @@
   },
   "config": {
     "pid": "timer-app-d0e7e",
-    "firestoreOutDir": "20211201_0018",
+    "firestoreOutDir": "20211205_1605",
     "_firestoreOutDir": "20211130_1017"
   },
   "scripts": {
@@ -32,18 +32,20 @@
     "deploy:functions::only": "firebase deploy --only functions:createUserDocument",
     "__desc1": "１．firestoreのデータをエクスポート。２．firestoreのデータをローカルにコピー。３．コピーしたデータをインポートして、emulatorsをスタート",
     "1.firestore:prod-export": "gcloud config set project %npm_package_config_pid% && gcloud firestore export gs://%npm_package_config_pid%.appspot.com/%npm_package_config_firestoreOutDir%/",
-    "2.mkdir": "mkdir functions/%npm_package_config_firestoreOutDir%",
+    "2.mkdir": "mkdirp functions/%npm_package_config_firestoreOutDir%",
     "3.firestore:cp-to-local": "gsutil -m cp -r gs://%npm_package_config_pid%.appspot.com/%npm_package_config_firestoreOutDir% ./functions/",
     "4.dev:firebase::import": "firebase emulators:start --import functions/%npm_package_config_firestoreOutDir%/",
-    "echo":"echo gs://%npm_package_config_pid%.appspot.com/%npm_package_config_firestoreOutDir%",
-    "_desc2":"export(bk)しておいたデータを本番にインポートする",
-    "a":"gcloud firestore import gs://%npm_package_config_pid%.appspot.com/%npm_package_config_firestoreOutDir%"
+    "5.1to4": "npm run 1.firestore:prod-export && npm run 2.mkdir && npm run 3.firestore:cp-to-local && npm run 4.dev:firebase::import",
+    "echo": "echo gs://%npm_package_config_pid%.appspot.com/%npm_package_config_firestoreOutDir%",
+    "_desc2": "export(bk)しておいたデータを本番にインポートする",
+    "a": "gcloud firestore import gs://%npm_package_config_pid%.appspot.com/%npm_package_config_firestoreOutDir%"
   },
   "devDependencies": {
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
     "@types/uuid": "^8.3.3",
+    "mkdirp": "^1.0.4",
     "typescript": "latest"
   }
 }
