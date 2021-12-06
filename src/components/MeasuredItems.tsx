@@ -141,10 +141,6 @@ const MeasuredItems = () => {
           times: [...measure.times, newTime],
         };
         setMeasure(newMeasure);
-        // setMeasure({
-        //   measuringItem: defaultMeasuringItem,
-        //   times: [...measure.times, newTime],
-        // });
       }
       if (measure.measuringItem?.["_id"] !== _id) {
         // 　別のアイテムをクリックして違うアイテムの計測を開始するとき
@@ -164,10 +160,6 @@ const MeasuredItems = () => {
           times: [...measure.times, newTime],
         }
         setMeasure(newMeasure);
-        // setMeasure({
-        //   measuringItem: newMeasuringItem,
-        //   times: [...measure.times, newTime],
-        // });
       }
     }
 
