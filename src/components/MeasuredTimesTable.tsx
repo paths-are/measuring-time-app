@@ -15,7 +15,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import { Box, Button,  Typography } from "@mui/material";
+import { Box, Button, Typography, Divider, TextField } from "@mui/material";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
@@ -29,7 +29,13 @@ const MeasuredTimesTable = React.memo(() => {
   const items = useRecoilValue(measuredItems);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [selectedTime, setSelectedTime] = React.useState<any | null>(null);
-  // const [newTime, setNewTime] = React.useState<any | null>(null);
+
+  const handleMemoChange = (event: any) => {
+    setSelectedTime({
+      ...selectedTime,
+      memo: event.target.value,
+    });
+  };
 
   const handleChange = (event: SelectChangeEvent) => {
     const newTimes = [...measure.times];
@@ -143,7 +149,7 @@ const MeasuredTimesTable = React.memo(() => {
     let obj = times.find((x: any) => x["_id"] === selectedTime["_id"]);
     let index = times.indexOf(obj);
     times.splice(index, 1); // 削除
-    
+
     const newMeasure = {
       ...measure,
       times: times,
@@ -159,6 +165,22 @@ const MeasuredTimesTable = React.memo(() => {
 
   const handleDialogClose = () => {
     setDialogOpen(false);
+
+    const newTimes = [...measure.times];
+    let obj = newTimes.find((x: any) => x["_id"] === selectedTime["_id"]);
+    let index = newTimes.indexOf(obj);
+    newTimes.splice(index, 1, selectedTime);
+
+    const newMeasure = {
+      ...measure,
+      times: newTimes,
+    };
+
+    setMeasure(newMeasure);
+    console.log("newMeasure", newMeasure);
+    const now = new Date();
+    const yyyymmdd = formatDate(now, "YYYYMMDD");
+    updateMeasuredTime(user.uid, yyyymmdd, newMeasure);
   };
 
   const renderMeasuredTimesTable = (response: any): void => {
@@ -170,7 +192,6 @@ const MeasuredTimesTable = React.memo(() => {
     }
   };
 
-
   React.useEffect(() => {
     const init = async () => {
       await fetchMeasuredTime(user.uid, renderMeasuredTimesTable);
@@ -181,14 +202,13 @@ const MeasuredTimesTable = React.memo(() => {
   return (
     <>
       <Dialog open={dialogOpen} onClose={handleDialogClose}>
-        <DialogTitle>時間を変更してください</DialogTitle>
+        <DialogTitle>アクション</DialogTitle>
         <DialogContent>
-          {/* <DialogContentText>開始</DialogContentText> */}
+          <Typography fontWeight="bold">時間変更</Typography>
           <Box sx={{ p: 1, display: "flex", alignItems: "center" }}>
             <FormControl variant="standard" sx={{ p: 1 }}>
-              <InputLabel id="demo-simple-select-label">時間</InputLabel>
+              <InputLabel>時間</InputLabel>
               <Select
-                labelId="demo-simple-select-label"
                 name="startTimeHours"
                 value={selectedTime?.startHh}
                 label="時間"
@@ -197,18 +217,20 @@ const MeasuredTimesTable = React.memo(() => {
                 {(() => {
                   const items = [];
                   for (let i = 0; i < 24; i++) {
-                    items.push(<MenuItem key={pad(i)} value={pad(i)}>{pad(i)}</MenuItem>);
+                    items.push(
+                      <MenuItem key={pad(i)} value={pad(i)}>
+                        {pad(i)}
+                      </MenuItem>
+                    );
                   }
                   return items;
                 })()}
               </Select>
             </FormControl>
             <FormControl variant="standard" sx={{ p: 1 }}>
-              <InputLabel id="demo-simple-select-label">分</InputLabel>
+              <InputLabel>分</InputLabel>
               <Select
-                labelId="demo-simple-select-label"
                 name="startTimeMinutes"
-                id="id3"
                 value={selectedTime?.startMm}
                 label="分"
                 onChange={handleChange}
@@ -216,7 +238,11 @@ const MeasuredTimesTable = React.memo(() => {
                 {(() => {
                   const items = [];
                   for (let i = 0; i < 60; i++) {
-                    items.push(<MenuItem key={pad(i)} value={pad(i)}>{pad(i)}</MenuItem>);
+                    items.push(
+                      <MenuItem key={pad(i)} value={pad(i)}>
+                        {pad(i)}
+                      </MenuItem>
+                    );
                   }
                   return items;
                 })()}
@@ -224,11 +250,9 @@ const MeasuredTimesTable = React.memo(() => {
             </FormControl>
             <Typography>-</Typography>
             <FormControl variant="standard" sx={{ p: 1 }}>
-              <InputLabel id="demo-simple-select-label">時間</InputLabel>
+              <InputLabel>時間</InputLabel>
               <Select
-                labelId="demo-simple-select-label"
                 name="endTimeHours"
-                id="id1"
                 value={selectedTime?.endHh}
                 label="時間"
                 onChange={handleChange}
@@ -236,18 +260,20 @@ const MeasuredTimesTable = React.memo(() => {
                 {(() => {
                   const items = [];
                   for (let i = 0; i < 24; i++) {
-                    items.push(<MenuItem key={pad(i)} value={pad(i)}>{pad(i)}</MenuItem>);
+                    items.push(
+                      <MenuItem key={pad(i)} value={pad(i)}>
+                        {pad(i)}
+                      </MenuItem>
+                    );
                   }
                   return items;
                 })()}
               </Select>
             </FormControl>
             <FormControl variant="standard" sx={{ p: 1 }}>
-              <InputLabel id="demo-simple-select-label">分</InputLabel>
+              <InputLabel>分</InputLabel>
               <Select
-                labelId="demo-simple-select-label"
                 name="endTimeMinutes"
-                id="id2"
                 value={selectedTime?.endMm}
                 label="分"
                 onChange={handleChange}
@@ -255,16 +281,36 @@ const MeasuredTimesTable = React.memo(() => {
                 {(() => {
                   const items = [];
                   for (let i = 0; i < 60; i++) {
-                    items.push(<MenuItem key={pad(i)} value={pad(i)}>{pad(i)}</MenuItem>);
+                    items.push(
+                      <MenuItem key={pad(i)} value={pad(i)}>
+                        {pad(i)}
+                      </MenuItem>
+                    );
                   }
                   return items;
                 })()}
               </Select>
             </FormControl>
           </Box>
+          <Divider sx={{ my: 1 }} />
+          <Typography fontWeight="bold">メモ</Typography>
+          <TextField
+            margin="dense"
+            label="メモ"
+            type="text"
+            multiline
+            rows={2}
+            fullWidth
+            variant="standard"
+            value={selectedTime?.memo}
+            onChange={handleMemoChange}
+          />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteTime}>この時間を削除する</Button>
+          <Button onClick={handleDeleteTime} sx={{ color: "red" }}>
+            この時間を削除する
+          </Button>
+          <Box sx={{ flexGrow: 1 }} />
           <Button onClick={handleDialogClose}>確定</Button>
         </DialogActions>
       </Dialog>
@@ -275,8 +321,9 @@ const MeasuredTimesTable = React.memo(() => {
         <Table stickyHeader aria-label="simple table">
           <TableHead>
             <TableRow>
-              <TableCell>番号</TableCell>
-              <TableCell align="right">項目</TableCell>
+              <TableCell align="left">番号</TableCell>
+              <TableCell>項目</TableCell>
+              <TableCell align="right">memo</TableCell>
               <TableCell align="right">開始</TableCell>
               <TableCell align="right">終了</TableCell>
               <TableCell align="right">時間(分)</TableCell>
@@ -298,12 +345,11 @@ const MeasuredTimesTable = React.memo(() => {
                   }}
                   onClick={() => handleClickDialogOpen(time)}
                 >
-                  <TableCell component="th" scope="row">
-                    {index}
-                  </TableCell>
+                  <TableCell align="left">{index}</TableCell>
                   <TableCell component="th" scope="row">
                     {result?.name}
                   </TableCell>
+                  <TableCell align="right">{time.memo}</TableCell>
                   <TableCell align="right">
                     {formatDate(time.start, "hh:mm")}
                   </TableCell>

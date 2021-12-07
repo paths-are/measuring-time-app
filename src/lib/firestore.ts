@@ -95,7 +95,7 @@ export async function addCollectionTest() {
 export async function deleteMeasuredItem(docId: string, removeItem: any) {
   const collectionName = "MeasuredItem";
   const docRef = doc(db, collectionName, docId);
-  
+
   await updateDoc(docRef, {
     items: arrayRemove(removeItem),
   });
@@ -139,15 +139,16 @@ export async function addMeasuredItem(docId: string, data: any) {
   }
 }
 
-export async function updateMeasuredItem(docId: string, data: any) {
+export async function updateMeasuredItem(docId: string, newItems: any) {
   const collectionName = "MeasuredItem";
   const docRef = doc(db, collectionName, docId);
   const docSnap = await getDoc(docRef);
+
   if (!docSnap.exists()) {
-    await setDoc(docRef, { items: [data] });
+    await setDoc(docRef, { items: newItems });
   } else {
     await updateDoc(docRef, {
-      items: arrayUnion(data),
+      items: newItems,
     });
   }
 }
@@ -169,7 +170,7 @@ export async function fetchMeasuredTime(
 
   onSnapshot(docRef, async (doc) => {
     if (doc.exists()) {
-      console.log("fetchMeasuredTime---")
+      console.log("fetchMeasuredTime---");
       console.log(doc.data());
       const data = doc.data();
       onUpdate(data);

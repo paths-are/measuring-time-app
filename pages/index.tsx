@@ -12,9 +12,12 @@ import MeasuredItems from "@/src/components/MeasuredItems";
 import MeasuredTimesTable from "@/src/components/MeasuredTimesTable";
 import { measure as measureAtom } from "@/src/recoilAtoms";
 import { useRecoilValue } from "recoil";
+import SwipeableViews from 'react-swipeable-views';
+import { useTheme } from '@mui/material/styles';
 
 interface TabPanelProps {
   children?: React.ReactNode;
+  dir?: string;
   index: number;
   value: number;
 }
@@ -26,8 +29,8 @@ function TabPanel(props: TabPanelProps) {
     <div
       role="tabpanel"
       hidden={value !== index}
-      id={`simple-tabpanel-${index}`}
-      aria-labelledby={`simple-tab-${index}`}
+      id={`full-width-tabpanel-${index}`}
+      aria-labelledby={`full-width-tab-${index}`}
       {...other}
     >
       {value === index && (
@@ -48,13 +51,12 @@ function a11yProps(index: number) {
 
 export default function Index() {
   const user: any = useUser();
-  // const [measure, setMeasure] = useRecoilState(measureAtom);
   const measure = useRecoilValue(measureAtom);
-
   const [value, setValue] = React.useState(0);
+  const theme = useTheme();
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-    console.log(event)
+    console.log(event);
     setValue(newValue);
   };
 
@@ -66,6 +68,10 @@ export default function Index() {
     logout().catch((error) => console.error(error));
   };
 
+  const handleChangeIndex = (index: number) => {
+    setValue(index);
+  };
+  
   return (
     <Container maxWidth="sm" sx={{ pb: 4 }}>
       <div>
@@ -99,12 +105,18 @@ export default function Index() {
                   <Tab label="History" {...a11yProps(1)} />
                 </Tabs>
               </Box>
-              <TabPanel value={value} index={0}>
+              <SwipeableViews
+                axis={theme.direction === "rtl" ? "x-reverse" : "x"}
+                index={value}
+                onChangeIndex={handleChangeIndex}
+              >
+                <TabPanel value={value} index={0} dir={theme.direction}>
                 <MeasuredItems />
-              </TabPanel>
-              <TabPanel value={value} index={1}>
+                </TabPanel>
+                <TabPanel value={value} index={1} dir={theme.direction}>
                 <MeasuredTimesTable />
-              </TabPanel>
+                </TabPanel>
+              </SwipeableViews>
             </Box>
           </>
         ) : (

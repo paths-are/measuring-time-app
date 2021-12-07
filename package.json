@@ -14,6 +14,7 @@
     "next": "latest",
     "react": "latest",
     "react-dom": "latest",
+    "react-swipeable-views": "^0.14.0",
     "recoil": "^0.5.2",
     "uuid": "^8.3.2"
   },
@@ -38,12 +39,13 @@
     "5.1to4": "npm run 1.firestore:prod-export && npm run 2.mkdir && npm run 3.firestore:cp-to-local && npm run 4.dev:firebase::import",
     "echo": "echo gs://%npm_package_config_pid%.appspot.com/%npm_package_config_firestoreOutDir%",
     "_desc2": "export(bk)しておいたデータを本番にインポートする",
-    "a": "gcloud firestore import gs://%npm_package_config_pid%.appspot.com/%npm_package_config_firestoreOutDir%"
+    "aaa": "gcloud firestore import gs://%npm_package_config_pid%.appspot.com/%npm_package_config_firestoreOutDir%"
   },
   "devDependencies": {
     "@types/node": "latest",
     "@types/react": "latest",
     "@types/react-dom": "latest",
+    "@types/react-swipeable-views": "^0.13.1",
     "@types/uuid": "^8.3.3",
     "mkdirp": "^1.0.4",
     "typescript": "latest"

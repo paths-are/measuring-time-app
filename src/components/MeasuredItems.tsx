@@ -13,12 +13,14 @@ import { useUser } from "@/src/lib/auth";
 import {
   fetchMeasuredItem,
   addMeasuredItem,
+  updateMeasuredItem,
   deleteMeasuredItem,
   updateMeasuredTime,
 } from "@/src/lib/firestore";
+import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { formatDate, orgFloor } from "@/src/lib/utils";
-import {useRecoilState } from "recoil";
+import { useRecoilState } from "recoil";
 import { measuredItems, measure as measureAtom } from "@/src/recoilAtoms";
 
 const MeasuredItems = () => {
@@ -27,38 +29,23 @@ const MeasuredItems = () => {
 
   const user: any = useUser();
   const [newItem, setNewItem] = React.useState("");
-  const [dialogOpen, setDialogOpen] = React.useState(false);
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [newDialog, setNewDialog] = React.useState(false);
+  const [deleteDialog, setDeleteDialog] = React.useState(false);
+  const [editDialog, setEditDialog] = React.useState(false);
   const [totalTimes, setTotalTimes] = React.useState<any>({});
-  const [deleteTargetItem, setDeleteTargetItem] = React.useState<any>({});
+  const [targetItem, setTargetItem] = React.useState<any>({});
 
-  const handleClickDialogOpen = () => {
-    setDialogOpen(true);
+  /**
+   * 新規アイテム追加
+   */
+  const openNewDialog = () => {
+    setNewDialog(true);
   };
-
-  const handleDialogClose = () => {
-    setDialogOpen(false);
+  const closeNewDialog = () => {
+    setNewDialog(false);
   };
-
-  const handleClickDeleteDialogOpen = () => {
-    setDeleteDialogOpen(true);
-  };
-
-  const handleDeleteDialogClose = () => {
-    setDeleteDialogOpen(false);
-  };
-  const handleClickDeleteIcon = (item: any): void => {
-    setDeleteTargetItem(item);
-    handleClickDeleteDialogOpen();
-  };
-
-  const handleDeleteItem = () => {
-    deleteMeasuredItem(user.uid, deleteTargetItem);
-    handleDeleteDialogClose();
-  };
-
   const handleSendItem = () => {
-    handleDialogClose();
+    closeNewDialog();
     addMeasuredItem(user.uid, {
       _id: uuidv4(),
       name: newItem,
@@ -67,9 +54,55 @@ const MeasuredItems = () => {
     });
     setNewItem("");
   };
-
   const handleOnChange = (e: any): void => {
     setNewItem(e.target.value);
+  };
+
+  /**
+   * Delete
+   */
+  const openDeleteDialog = () => {
+    setDeleteDialog(true);
+  };
+  const handleClickDeleteIcon = (item: any): void => {
+    setTargetItem(item);
+    openDeleteDialog();
+  };
+  const closeDeleteDialog = () => {
+    setDeleteDialog(false);
+  };
+  const handleDeleteItem = () => {
+    deleteMeasuredItem(user.uid, targetItem);
+    closeDeleteDialog();
+  };
+
+  /**
+   * Edit
+   */
+  const handleClickEditIcon = (item: any): void => {
+    setTargetItem(item);
+    openEditDialog();
+  };
+  const openEditDialog = () => {
+    setEditDialog(true);
+  };
+  const closeEditDialog = () => {
+    setEditDialog(false);
+  };
+  const handleOnChangeTargetItem = (e: any): void => {
+    setTargetItem({ ...targetItem, name: e.target.value });
+  };
+  const handleUpdateItem = () => {
+    const newItems = [...items];
+    let obj = newItems.find((x: any) => x["_id"] === targetItem["_id"]);
+    let index = newItems.indexOf(obj);
+    newItems.splice(index, 1, targetItem);
+
+    setItems(newItems);
+    console.log("newItems", newItems);
+
+    updateMeasuredItem(user.uid, newItems);
+    closeEditDialog();
   };
 
   const handleShowItems = (items: any): void => {
@@ -103,7 +136,6 @@ const MeasuredItems = () => {
    * @param _id
    */
   const handleClickItem = (_id: string): void => {
-
     const result: any = items.find((item: any) => item["_id"] === _id);
     const newMeasuringItem: any = {};
 
@@ -116,7 +148,7 @@ const MeasuredItems = () => {
       newMeasuringItem["_id"] = _id;
       newMeasuringItem.start = new Date().getTime();
       newMeasuringItem.name = result.name;
-      newMeasure = { ...measure, measuringItem: newMeasuringItem }
+      newMeasure = { ...measure, measuringItem: newMeasuringItem };
       setMeasure(newMeasure);
       // setMeasure({ ...measure, measuringItem: newMeasuringItem });
     } else {
@@ -158,7 +190,7 @@ const MeasuredItems = () => {
         newMeasure = {
           measuringItem: newMeasuringItem,
           times: [...measure.times, newTime],
-        }
+        };
         setMeasure(newMeasure);
       }
     }
@@ -171,7 +203,7 @@ const MeasuredItems = () => {
   return (
     <>
       {/* 項目追加フォーム */}
-      <Dialog open={dialogOpen} onClose={handleDialogClose}>
+      <Dialog open={newDialog} onClose={closeNewDialog}>
         <DialogTitle>項目の追加</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -182,7 +214,7 @@ const MeasuredItems = () => {
             margin="dense"
             id="item"
             label="項目名"
-            type="email"
+            type="text"
             fullWidth
             variant="standard"
             value={newItem}
@@ -190,28 +222,53 @@ const MeasuredItems = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDialogClose}>戻る</Button>
+          <Button onClick={closeNewDialog}>戻る</Button>
           <Button onClick={handleSendItem}>追加</Button>
         </DialogActions>
       </Dialog>
 
+      {/* 項目 編集フォーム */}
+      <Dialog open={editDialog} onClose={closeEditDialog}>
+        <DialogTitle>項目の編集</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            アイテムを編集しよう！
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            id="item"
+            label="項目名"
+            type="text"
+            fullWidth
+            variant="standard"
+            value={targetItem?.name}
+            onChange={handleOnChangeTargetItem}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeEditDialog}>戻る</Button>
+          <Button onClick={handleUpdateItem}>更新</Button>
+        </DialogActions>
+      </Dialog>
+
       {/* 項目削除確認ダイアログ */}
-      <Dialog open={deleteDialogOpen} onClose={handleDialogClose}>
+      <Dialog open={deleteDialog} onClose={closeNewDialog}>
         <DialogTitle>注意</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {`「${deleteTargetItem.name}」を削除します。よろしいですか？`}
+            {`「${targetItem.name}」を削除します。よろしいですか？`}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleDeleteDialogClose}>いいえ</Button>
+          <Button onClick={closeDeleteDialog}>いいえ</Button>
           <Button onClick={handleDeleteItem}>はい</Button>
         </DialogActions>
       </Dialog>
 
       <Box sx={{ p: 1 }}>
         <Box sx={{ display: "flex", justifyContent: "end" }}>
-          <Button onClick={handleClickDialogOpen} sx={{ mb: 1 }}>
+          <Button onClick={openNewDialog} sx={{ mb: 1 }}>
             追加
           </Button>
         </Box>
@@ -223,6 +280,9 @@ const MeasuredItems = () => {
                 key={index}
                 sx={{ mb: 1, display: "flex", alignItems: "center" }}
               >
+                <IconButton onClick={() => handleClickEditIcon(item)}>
+                  <EditIcon />
+                </IconButton>
                 <IconButton onClick={() => handleClickDeleteIcon(item)}>
                   <DeleteIcon />
                 </IconButton>
