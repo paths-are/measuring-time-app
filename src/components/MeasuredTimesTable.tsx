@@ -323,7 +323,7 @@ const MeasuredTimesTable = React.memo(() => {
             <TableRow>
               <TableCell align="left">番号</TableCell>
               <TableCell>項目</TableCell>
-              <TableCell align="right">memo</TableCell>
+              <TableCell align="left">memo</TableCell>
               <TableCell align="right">開始</TableCell>
               <TableCell align="right">終了</TableCell>
               <TableCell align="right">時間(分)</TableCell>
@@ -349,7 +349,7 @@ const MeasuredTimesTable = React.memo(() => {
                   <TableCell component="th" scope="row">
                     {result?.name}
                   </TableCell>
-                  <TableCell align="right">{time.memo}</TableCell>
+                  <TableCell align="left">{time.memo}</TableCell>
                   <TableCell align="right">
                     {formatDate(time.start, "hh:mm")}
                   </TableCell>
