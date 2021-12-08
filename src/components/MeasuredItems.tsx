@@ -1,7 +1,7 @@
 import * as React from "react";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import { Button, TextField, IconButton } from "@mui/material";
+import { Button, TextField, IconButton, Grid } from "@mui/material";
 
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -37,6 +37,7 @@ const MeasuredItems = () => {
   const [editDialog, setEditDialog] = React.useState(false);
   const [targetItem, setTargetItem] = React.useState<any>({});
   const totalTimes = useRecoilValue(totalTimesAtom);
+  const [editMode, setEditMode] = React.useState(false);
 
   /**
    * 新規アイテム追加
@@ -82,6 +83,11 @@ const MeasuredItems = () => {
   /**
    * Edit
    */
+
+  const editModeOn = () => {
+    setEditMode(!editMode);
+  };
+
   const handleClickEditIcon = (item: any): void => {
     setTargetItem(item);
     openEditDialog();
@@ -241,26 +247,51 @@ const MeasuredItems = () => {
         </DialogActions>
       </Dialog>
 
-      <Box sx={{ p: 1 }}>
-        <Box sx={{ display: "flex", justifyContent: "end" }}>
-          <Button onClick={openNewDialog} sx={{ mb: 1 }}>
-            追加
-          </Button>
-        </Box>
-        {items?.map((item: any, index: number) => {
-          const _id = item["_id"];
-          if (!item.isDelete)
-            return (
-              <Box
-                key={index}
-                sx={{ mb: 1, display: "flex", alignItems: "center" }}
-              >
-                <IconButton onClick={() => handleClickEditIcon(item)}>
-                  <EditIcon />
-                </IconButton>
-                <IconButton onClick={() => handleClickDeleteIcon(item)}>
-                  <DeleteIcon />
-                </IconButton>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "end",
+          alignItems: "center",
+          mb: 1,
+        }}
+      >
+        <Button onClick={openNewDialog}>追加</Button>
+        <Button onClick={editModeOn}>編集</Button>
+      </Box>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "end",
+          alignItems: "center",
+          mb: 1,
+        }}
+      >
+        <Typography>合計(分)</Typography>
+      </Box>
+      {items?.map((item: any, index: number) => {
+        const _id = item["_id"];
+        const baseTime = 60 * 5; // 1日5時間同じ事やってればすごいということで。（なんとなく）
+        const totalTime = totalTimes[_id]
+          ? orgFloor(totalTimes[_id] / 60, 2)
+          : 0;
+        const rate = (totalTime / baseTime) * 100;
+        console.log(rate);
+
+        if (!item.isDelete)
+          return (
+            <Grid
+              container
+              key={index}
+              sx={{ mb: 1, display: "flex", alignItems: "center" }}
+            >
+              {editMode && (
+                <Grid item xs={2}>
+                  <IconButton onClick={() => handleClickDeleteIcon(item)}>
+                    <DeleteIcon />
+                  </IconButton>
+                </Grid>
+              )}
+              <Grid item xs={editMode ? 8 : 10}>
                 <Button
                   variant={
                     measure.measuringItem?.["_id"] === _id
@@ -271,17 +302,37 @@ const MeasuredItems = () => {
                   sx={{
                     flexGrow: 1,
                     mr: 1,
+                    border: "none",
+                    background:
+                      measure.measuringItem?.["_id"] === _id
+                        ? `linear-gradient(90deg, #3abb9c5c ${rate}%, #ad76769e ${rate}% 100%)`
+                        : `linear-gradient(90deg, #3abb9c ${rate}%, #ad7676 ${
+                            rate === 0 ? 0 : rate + 3
+                          }% 100%)`,
+                    ":hover": {
+                      border: "grey solid 1px",
+                    },
                   }}
+                  fullWidth
                 >
                   {item.name}
                 </Button>
-                <Typography>
-                  {totalTimes[_id] ? orgFloor(totalTimes[_id] / 60, 2) : "-"}分
-                </Typography>
-              </Box>
-            );
-        })}
-      </Box>
+              </Grid>
+              {editMode && (
+                <Grid item xs={2}>
+                  <IconButton onClick={() => handleClickEditIcon(item)}>
+                    <EditIcon />
+                  </IconButton>
+                </Grid>
+              )}
+              {!editMode && (
+                <Grid item xs={2}>
+                  <Typography textAlign="right">{totalTime}分</Typography>
+                </Grid>
+              )}
+            </Grid>
+          );
+      })}
     </>
   );
 };

@@ -36,6 +36,12 @@ const MeasuredTimesTable = React.memo(() => {
       memo: event.target.value,
     });
   };
+  const handleChangeItem = (event: any) => {
+    setSelectedTime({
+      ...selectedTime,
+      itemId: event.target.value,
+    });
+  };
 
   const handleChange = (event: SelectChangeEvent) => {
     const newTimes = [...measure.times];
@@ -185,13 +191,40 @@ const MeasuredTimesTable = React.memo(() => {
     updateMeasuredTime(user.uid, yyyymmdd, newMeasure);
   };
 
+  React.useEffect(() => {
+    console.log(selectedTime);
+  }, [selectedTime]);
+
   return (
     <>
       <Dialog open={dialogOpen} onClose={handleDialogClose}>
         <DialogTitle>アクション</DialogTitle>
         <DialogContent>
-          <Typography fontWeight="bold">時間変更</Typography>
-          <Box sx={{ p: 1, display: "flex", alignItems: "center" }}>
+          <FormControl variant="standard" sx={{ p: 1 }} fullWidth>
+            <InputLabel>アイテム</InputLabel>
+            <Select
+              name="measuredItem"
+              value={selectedTime?.itemId}
+              label="アイテム"
+              onChange={handleChangeItem}
+            >
+              {(() => {
+                const selectItems = [];
+                for (let i = 0; i < items.length; i++) {
+                  if (!items[i].isDelete) {
+                    selectItems.push(
+                      <MenuItem key={pad(i)} value={items[i]._id}>
+                        {items[i].name}
+                      </MenuItem>
+                    );
+                  }
+                }
+                return selectItems;
+              })()}
+            </Select>
+          </FormControl>
+          <Divider sx={{ my: 1 }} />
+          <Box sx={{ display: "flex", alignItems: "center" }}>
             <FormControl variant="standard" sx={{ p: 1 }}>
               <InputLabel>時間</InputLabel>
               <Select
@@ -279,7 +312,6 @@ const MeasuredTimesTable = React.memo(() => {
             </FormControl>
           </Box>
           <Divider sx={{ my: 1 }} />
-          <Typography fontWeight="bold">メモ</Typography>
           <TextField
             margin="dense"
             label="メモ"
