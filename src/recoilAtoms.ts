@@ -4,6 +4,10 @@ export const measuredItems = atom<any>({
   key: "measuredItems",
   default: null,
 });
+export const totalTimes = atom<any>({
+  key: "totalTimes",
+  default: {},
+});
 
 export const measure = atom<any>({
   key: "measure",

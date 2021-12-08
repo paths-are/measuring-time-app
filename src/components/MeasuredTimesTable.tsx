@@ -9,7 +9,7 @@ import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import { useRecoilValue, useRecoilState } from "recoil";
 import { measuredItems, measure as measureAtom } from "@/src/recoilAtoms";
-import { updateMeasuredTime, fetchMeasuredTime } from "@/src/lib/firestore";
+import { updateMeasuredTime } from "@/src/lib/firestore";
 import { useUser } from "@/src/lib/auth";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
@@ -57,6 +57,7 @@ const MeasuredTimesTable = React.memo(() => {
       };
       setSelectedTime({
         ...selectedTime,
+        start: newTime,
         startHh: formatDate(newTime, "hh"),
       });
     }
@@ -75,6 +76,7 @@ const MeasuredTimesTable = React.memo(() => {
       };
       setSelectedTime({
         ...selectedTime,
+        start: newTime,
         startMm: formatDate(newTime, "mm"),
       });
     }
@@ -182,22 +184,6 @@ const MeasuredTimesTable = React.memo(() => {
     const yyyymmdd = formatDate(now, "YYYYMMDD");
     updateMeasuredTime(user.uid, yyyymmdd, newMeasure);
   };
-
-  const renderMeasuredTimesTable = (response: any): void => {
-    const today = formatDate(new Date(), "YYYYMMDD");
-    if (today in response) {
-      setMeasure(response[today]);
-    } else {
-      setMeasure({ ...measure, times: [] });
-    }
-  };
-
-  React.useEffect(() => {
-    const init = async () => {
-      await fetchMeasuredTime(user.uid, renderMeasuredTimesTable);
-    };
-    if (user) init();
-  }, [user]);
 
   return (
     <>
@@ -314,6 +300,36 @@ const MeasuredTimesTable = React.memo(() => {
           <Button onClick={handleDialogClose}>確定</Button>
         </DialogActions>
       </Dialog>
+      <Button
+        onClick={() => {
+          function compare(a: any, b: any) {
+            if (a.start < b.start) {
+              return -1;
+            }
+            if (a.start > b.start) {
+              return 1;
+            }
+            return 0;
+          }
+
+          const newTimes = [...measure.times];
+          newTimes.sort(compare);
+          console.log(newTimes);
+
+          const newMeasure = {
+            ...measure,
+            times: newTimes,
+          };
+
+          setMeasure(newMeasure);
+          console.log("newMeasure", newMeasure);
+          const now = new Date();
+          const yyyymmdd = formatDate(now, "YYYYMMDD");
+          updateMeasuredTime(user.uid, yyyymmdd, newMeasure);
+        }}
+      >
+        並び替え
+      </Button>
       <TableContainer
         component={Paper}
         sx={{ maxHeight: 440, width: "100%", overflow: "scroll" }}
@@ -331,9 +347,9 @@ const MeasuredTimesTable = React.memo(() => {
           </TableHead>
           <TableBody>
             {measure.times?.map((time: any, index: number) => {
-              const result: any = items.find((item: any) => {
-                return item["_id"] === time.itemId;
-              });
+              const result: any = items.find(
+                (item: any) => item["_id"] === time.itemId
+              );
               return (
                 <TableRow
                   key={index}

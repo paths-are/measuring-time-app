@@ -11,7 +11,6 @@ import DialogTitle from "@mui/material/DialogTitle";
 import { v4 as uuidv4 } from "uuid";
 import { useUser } from "@/src/lib/auth";
 import {
-  fetchMeasuredItem,
   addMeasuredItem,
   updateMeasuredItem,
   deleteMeasuredItem,
@@ -20,8 +19,12 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { formatDate, orgFloor } from "@/src/lib/utils";
-import { useRecoilState } from "recoil";
-import { measuredItems, measure as measureAtom } from "@/src/recoilAtoms";
+import { useRecoilValue, useRecoilState } from "recoil";
+import {
+  measuredItems,
+  totalTimes as totalTimesAtom,
+  measure as measureAtom,
+} from "@/src/recoilAtoms";
 
 const MeasuredItems = () => {
   const [items, setItems] = useRecoilState(measuredItems);
@@ -32,8 +35,8 @@ const MeasuredItems = () => {
   const [newDialog, setNewDialog] = React.useState(false);
   const [deleteDialog, setDeleteDialog] = React.useState(false);
   const [editDialog, setEditDialog] = React.useState(false);
-  const [totalTimes, setTotalTimes] = React.useState<any>({});
   const [targetItem, setTargetItem] = React.useState<any>({});
+  const totalTimes = useRecoilValue(totalTimesAtom);
 
   /**
    * 新規アイテム追加
@@ -104,32 +107,6 @@ const MeasuredItems = () => {
     updateMeasuredItem(user.uid, newItems);
     closeEditDialog();
   };
-
-  const handleShowItems = (items: any): void => {
-    setItems(items);
-  };
-
-  React.useEffect(() => {
-    const init = async () => {
-      await fetchMeasuredItem(user.uid, handleShowItems);
-    };
-    if (user) init();
-  }, [user]);
-
-  React.useEffect(() => {
-    const init = async () => {
-      let totalTimes: any = {};
-      measure.times?.map((time: any) => {
-        const _id = time["itemId"];
-
-        totalTimes[_id] = totalTimes[_id]
-          ? totalTimes[_id] + (time.end - time.start) / 1000
-          : (time.end - time.start) / 1000;
-      });
-      setTotalTimes(totalTimes);
-    };
-    if (user) init();
-  }, [measure.times]);
 
   /**
    * 計測アイテムがクリックされたときの処理
@@ -231,9 +208,7 @@ const MeasuredItems = () => {
       <Dialog open={editDialog} onClose={closeEditDialog}>
         <DialogTitle>項目の編集</DialogTitle>
         <DialogContent>
-          <DialogContentText>
-            アイテムを編集しよう！
-          </DialogContentText>
+          <DialogContentText>アイテムを編集しよう！</DialogContentText>
           <TextField
             autoFocus
             margin="dense"

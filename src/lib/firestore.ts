@@ -118,7 +118,7 @@ export async function fetchMeasuredItem(docId: string, onUpdate: any) {
   onSnapshot(docRef, async (doc) => {
     if (doc.exists()) {
       const data = doc.data();
-      // console.log("onUpdate----");
+      console.log("onUpdate----");
       onUpdate(data.items);
     } else {
       console.log("fetchMeasuredItem -> No such document!");

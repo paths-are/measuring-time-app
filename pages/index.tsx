@@ -7,13 +7,18 @@ import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 
 import { useUser, login, logout } from "@/src/lib/auth";
+import { fetchMeasuredItem, fetchMeasuredTime } from "@/src/lib/firestore";
 import { formatDate } from "@/src/lib/utils";
 import MeasuredItems from "@/src/components/MeasuredItems";
 import MeasuredTimesTable from "@/src/components/MeasuredTimesTable";
-import { measure as measureAtom } from "@/src/recoilAtoms";
-import { useRecoilValue } from "recoil";
-import SwipeableViews from 'react-swipeable-views';
-import { useTheme } from '@mui/material/styles';
+import {
+  measuredItems,
+  totalTimes as totalTimesAtom,
+  measure as measureAtom,
+} from "@/src/recoilAtoms";
+import { useRecoilState, useSetRecoilState } from "recoil";
+import SwipeableViews from "react-swipeable-views";
+import { useTheme } from "@mui/material/styles";
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -35,7 +40,7 @@ function TabPanel(props: TabPanelProps) {
     >
       {value === index && (
         <Box sx={{ p: 3 }}>
-          <Typography>{children}</Typography>
+          {children}
         </Box>
       )}
     </div>
@@ -51,9 +56,11 @@ function a11yProps(index: number) {
 
 export default function Index() {
   const user: any = useUser();
-  const measure = useRecoilValue(measureAtom);
   const [value, setValue] = React.useState(0);
   const theme = useTheme();
+  const [measure, setMeasure] = useRecoilState(measureAtom);
+  const setItems = useSetRecoilState(measuredItems);
+  const setTotalTimes = useSetRecoilState(totalTimesAtom);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     console.log(event);
@@ -71,7 +78,53 @@ export default function Index() {
   const handleChangeIndex = (index: number) => {
     setValue(index);
   };
-  
+
+  /**
+   * アイテム初期化系
+   */
+  const handleShowItems = (items: any): void => {
+    setItems(items);
+  };
+  React.useEffect(() => {
+    const init = async () => {
+      await fetchMeasuredItem(user.uid, handleShowItems);
+    };
+    if (user) init();
+  }, [user]);
+
+  React.useEffect(() => {
+    const init = async () => {
+      let totalTimes: any = {};
+      measure.times?.map((time: any) => {
+        const _id = time["itemId"];
+
+        totalTimes[_id] = totalTimes[_id]
+          ? totalTimes[_id] + (time.end - time.start) / 1000
+          : (time.end - time.start) / 1000;
+      });
+      setTotalTimes(totalTimes);
+    };
+    if (user) init();
+  }, [measure.times]);
+
+  /**
+   * times初期化系
+   */
+  const renderMeasuredTimesTable = (response: any): void => {
+    const today = formatDate(new Date(), "YYYYMMDD");
+    if (today in response) {
+      setMeasure(response[today]);
+    } else {
+      setMeasure({ ...measure, times: [] });
+    }
+  };
+  React.useEffect(() => {
+    const init = async () => {
+      await fetchMeasuredTime(user.uid, renderMeasuredTimesTable);
+    };
+    if (user) init();
+  }, [user]);
+
   return (
     <Container maxWidth="sm" sx={{ pb: 4 }}>
       <div>
@@ -111,10 +164,10 @@ export default function Index() {
                 onChangeIndex={handleChangeIndex}
               >
                 <TabPanel value={value} index={0} dir={theme.direction}>
-                <MeasuredItems />
+                  <MeasuredItems />
                 </TabPanel>
                 <TabPanel value={value} index={1} dir={theme.direction}>
-                <MeasuredTimesTable />
+                  <MeasuredTimesTable />
                 </TabPanel>
               </SwipeableViews>
             </Box>
