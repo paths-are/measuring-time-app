@@ -11,6 +11,7 @@ import { fetchMeasuredItem, fetchMeasuredTime } from "@/src/lib/firestore";
 import { formatDate } from "@/src/lib/utils";
 import MeasuredItems from "@/src/components/MeasuredItems";
 import MeasuredTimesTable from "@/src/components/MeasuredTimesTable";
+import Calendar from "@/src/components/Calendar";
 import {
   measuredItems,
   totalTimes as totalTimesAtom,
@@ -108,7 +109,9 @@ export default function Index() {
    */
   const renderMeasuredTimesTable = (response: any): void => {
     const today = formatDate(new Date(), "YYYYMMDD");
+    // const today = formatDate(new Date(), "2021/12/08 00:11:11");
     if (today in response) {
+      console.log(today)
       setMeasure(response[today]);
     } else {
       setMeasure({ ...measure, times: [] });
@@ -152,6 +155,7 @@ export default function Index() {
                 >
                   <Tab label="Measure" {...a11yProps(0)} />
                   <Tab label="History" {...a11yProps(1)} />
+                  <Tab label="Calendar" {...a11yProps(2)} />
                 </Tabs>
               </Box>
               <SwipeableViews
@@ -164,6 +168,9 @@ export default function Index() {
                 </TabPanel>
                 <TabPanel value={value} index={1} dir={theme.direction}>
                   <MeasuredTimesTable />
+                </TabPanel>
+                <TabPanel value={value} index={2} dir={theme.direction}>
+                  <Calendar />
                 </TabPanel>
               </SwipeableViews>
             </Box>

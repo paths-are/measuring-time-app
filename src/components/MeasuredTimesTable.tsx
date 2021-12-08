@@ -210,7 +210,7 @@ const MeasuredTimesTable = React.memo(() => {
             >
               {(() => {
                 const selectItems = [];
-                for (let i = 0; i < items.length; i++) {
+                for (let i = 0; i < items?.length; i++) {
                   if (!items[i].isDelete) {
                     selectItems.push(
                       <MenuItem key={pad(i)} value={items[i]._id}>
