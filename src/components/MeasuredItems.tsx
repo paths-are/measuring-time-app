@@ -16,8 +16,6 @@ import {
   deleteMeasuredItem,
   updateMeasuredTime,
 } from "@/src/lib/firestore";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
 import { formatDate, orgFloor } from "@/src/lib/utils";
 import { useRecoilValue, useRecoilState } from "recoil";
 import {
