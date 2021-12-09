@@ -20,16 +20,19 @@ import {
 import { useRecoilState, useSetRecoilState } from "recoil";
 import SwipeableViews from "react-swipeable-views";
 import { useTheme } from "@mui/material/styles";
+import { Scrollbar } from "react-scrollbars-custom";
 
 interface TabPanelProps {
   children?: React.ReactNode;
   dir?: string;
   index: number;
   value: number;
+  fixedHeight: number;
 }
 
 function TabPanel(props: TabPanelProps) {
-  const { children, value, index, ...other } = props;
+  const { children, value, index, fixedHeight, ...other } = props;
+  const paddingBottom = 32;
 
   return (
     <div
@@ -39,7 +42,22 @@ function TabPanel(props: TabPanelProps) {
       aria-labelledby={`full-width-tab-${index}`}
       {...other}
     >
-      {value === index && <Box sx={{ p: { xs: 1, sm: 3 } }}>{children}</Box>}
+      {value === index && (
+        <Scrollbar
+          style={{
+            width: "100%",
+            height: `calc(100vh - ${fixedHeight}px - ${paddingBottom}px)`,
+          }}
+        >
+          <Box
+            sx={{
+              p: { xs: 1, sm: 3 },
+            }}
+          >
+            {children}
+          </Box>
+        </Scrollbar>
+      )}
     </div>
   );
 }
@@ -59,6 +77,9 @@ export default function Index() {
   const setItems = useSetRecoilState(measuredItems);
   const setTotalTimes = useSetRecoilState(totalTimesAtom);
 
+  const fixedIds = ["app-header", "top-container", "tab-container"];
+  const [fixedHeight, setFixedHeight] = React.useState(0);
+
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     console.log(event);
     setValue(newValue);
@@ -75,6 +96,19 @@ export default function Index() {
   const handleChangeIndex = (index: number) => {
     setValue(index);
   };
+
+  /**
+   * 上部固定アイテムの高さを取得
+   */
+  React.useEffect(() => {
+    let height = 0;
+    for (let fixedId of fixedIds) {
+      console.log(fixedId);
+      const ele = document.getElementById(fixedId);
+      if (ele) height += ele.clientHeight;
+    }
+    setFixedHeight(height);
+  }, []);
 
   /**
    * アイテム初期化系
@@ -111,7 +145,7 @@ export default function Index() {
     const today = formatDate(new Date(), "YYYYMMDD");
     // const today = formatDate(new Date(), "2021/12/08 00:11:11");
     if (today in response) {
-      console.log(today)
+      console.log(today);
       setMeasure(response[today]);
     } else {
       setMeasure({ ...measure, times: [] });
@@ -129,13 +163,13 @@ export default function Index() {
       <div>
         {user !== null ? (
           <>
-            <Box sx={{ display: "flex" }}>
+            <Box id="app-header" sx={{ display: "flex" }}>
               <h1>Timer App</h1>
               <div style={{ flexGrow: 1 }} />
               <Button onClick={handleLogout}>ログアウト</Button>
             </Box>
 
-            <Box>
+            <Box id="top-container">
               <Typography align="center">
                 計測中のアイテム：{measure.measuringItem.name}
               </Typography>
@@ -147,7 +181,10 @@ export default function Index() {
               </Typography>
             </Box>
             <Box sx={{ width: "100%" }}>
-              <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+              <Box
+                id="tab-container"
+                sx={{ borderBottom: 1, borderColor: "divider" }}
+              >
                 <Tabs
                   value={value}
                   onChange={handleChange}
@@ -163,13 +200,28 @@ export default function Index() {
                 index={value}
                 onChangeIndex={handleChangeIndex}
               >
-                <TabPanel value={value} index={0} dir={theme.direction}>
+                <TabPanel
+                  value={value}
+                  index={0}
+                  dir={theme.direction}
+                  fixedHeight={fixedHeight}
+                >
                   <MeasuredItems />
                 </TabPanel>
-                <TabPanel value={value} index={1} dir={theme.direction}>
+                <TabPanel
+                  value={value}
+                  index={1}
+                  dir={theme.direction}
+                  fixedHeight={fixedHeight}
+                >
                   <MeasuredTimesTable />
                 </TabPanel>
-                <TabPanel value={value} index={2} dir={theme.direction}>
+                <TabPanel
+                  value={value}
+                  index={2}
+                  dir={theme.direction}
+                  fixedHeight={fixedHeight}
+                >
                   <Calendar />
                 </TabPanel>
               </SwipeableViews>

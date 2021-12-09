@@ -26,6 +26,11 @@ import {
   measure as measureAtom,
 } from "@/src/recoilAtoms";
 
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import Select from "@mui/material/Select";
+
 const MeasuredItems = () => {
   const [items, setItems] = useRecoilState(measuredItems);
   const [measure, setMeasure] = useRecoilState(measureAtom);
@@ -38,6 +43,17 @@ const MeasuredItems = () => {
   const [targetItem, setTargetItem] = React.useState<any>({});
   const totalTimes = useRecoilValue(totalTimesAtom);
   const [editMode, setEditMode] = React.useState(false);
+
+  const colorList = [
+    "#3f51b5",
+    "#2196f3",
+    "#e91e63",
+    "#009688",
+    "#ffeb3b",
+    "#673ab7",
+    "#757575",
+    "yellow",
+  ];
 
   /**
    * 新規アイテム追加
@@ -68,10 +84,6 @@ const MeasuredItems = () => {
   const openDeleteDialog = () => {
     setDeleteDialog(true);
   };
-  const handleClickDeleteIcon = (item: any): void => {
-    setTargetItem(item);
-    openDeleteDialog();
-  };
   const closeDeleteDialog = () => {
     setDeleteDialog(false);
   };
@@ -83,11 +95,9 @@ const MeasuredItems = () => {
   /**
    * Edit
    */
-
-  const editModeOn = () => {
+  const editModeToggle = () => {
     setEditMode(!editMode);
   };
-
   const handleClickEditIcon = (item: any): void => {
     setTargetItem(item);
     openEditDialog();
@@ -98,19 +108,69 @@ const MeasuredItems = () => {
   const closeEditDialog = () => {
     setEditDialog(false);
   };
+  const handleDeleteSubItem = (subItemId: string) => {
+    let newSubItems = [...targetItem.subItems];
+    let obj = newSubItems.find((x: any) => x["_id"] === subItemId);
+    let index = newSubItems.indexOf(obj);
+    newSubItems.splice(index, 1); // 削除
+    setTargetItem({ ...targetItem, subItems: newSubItems });
+  };
   const handleOnChangeTargetItem = (e: any): void => {
-    setTargetItem({ ...targetItem, name: e.target.value });
+    if (e.target.name === "itemName") {
+      setTargetItem({ ...targetItem, name: e.target.value });
+      return;
+    }
+    if (e.target.name.substring(0, 8) === "subItems") {
+      let newSubItems = [...targetItem.subItems];
+      let obj = newSubItems.find((x: any) => x["_id"] === e.target.id);
+      let index = newSubItems.indexOf(obj);
+      const newSubItem = { ...obj, name: e.target.value };
+
+      newSubItems.splice(index, 1, newSubItem);
+
+      setTargetItem({ ...targetItem, subItems: newSubItems });
+      return;
+    }
+    if (e.target.name === "newSubItem") {
+      setTargetItem({ ...targetItem, newSubItem: e.target.value });
+      return;
+    }
+    if (e.target.name === "color") {
+      setTargetItem({ ...targetItem, color: e.target.value });
+      return;
+    }
   };
   const handleUpdateItem = () => {
     const newItems = [...items];
     let obj = newItems.find((x: any) => x["_id"] === targetItem["_id"]);
     let index = newItems.indexOf(obj);
-    newItems.splice(index, 1, targetItem);
+
+    let newItem = { ...targetItem };
+    if (targetItem.newSubItem) {
+      newItem.subItems = targetItem.subItems
+        ? [
+            ...targetItem.subItems,
+            {
+              _id: `subitem_${uuidv4()}`,
+              name: targetItem.newSubItem,
+            },
+          ]
+        : [
+            {
+              _id: `subitem_${uuidv4()}`,
+              name: targetItem.newSubItem,
+            },
+          ];
+      newItem.newSubItem = null;
+    }
+
+    newItems.splice(index, 1, newItem);
 
     setItems(newItems);
     console.log("newItems", newItems);
 
     updateMeasuredItem(user.uid, newItems);
+    setTargetItem({});
     closeEditDialog();
   };
 
@@ -218,7 +278,7 @@ const MeasuredItems = () => {
           <TextField
             autoFocus
             margin="dense"
-            id="item"
+            name="itemName"
             label="項目名"
             type="text"
             fullWidth
@@ -226,8 +286,84 @@ const MeasuredItems = () => {
             value={targetItem?.name}
             onChange={handleOnChangeTargetItem}
           />
+          <FormControl variant="standard" sx={{ my: 1 }} fullWidth>
+            <InputLabel>色</InputLabel>
+            <Select
+              name="color"
+              value={targetItem?.color}
+              label="アイテム"
+              onChange={handleOnChangeTargetItem}
+              sx={{ color: targetItem?.color }}
+            >
+              {(() => {
+                const menuItems = [];
+                for (const color of colorList) {
+                  menuItems.push(
+                    <MenuItem key={color} value={color}>
+                      {color}
+                      <div style={{ flexGrow: 1 }} />
+                      <div
+                        style={{
+                          backgroundColor: color,
+                          width: 20,
+                          height: 20,
+                          display: "inline",
+                        }}
+                      />
+                    </MenuItem>
+                  );
+                }
+                return menuItems;
+              })()}
+            </Select>
+          </FormControl>
+          {targetItem?.subItems?.map((ele: any, index: number) => {
+            return (
+              <Box sx={{ display: "flex", width: "100%" }}>
+                <FormControl variant="standard" sx={{ pl: 2 }} fullWidth>
+                  <TextField
+                    autoFocus
+                    margin="dense"
+                    id={ele._id}
+                    name={`subItems.${index}`}
+                    label="サブアイテム"
+                    type="text"
+                    fullWidth
+                    variant="standard"
+                    value={ele.name}
+                    onChange={handleOnChangeTargetItem}
+                  />
+                </FormControl>
+                <Button
+                  onClick={() => {
+                    handleDeleteSubItem(ele._id);
+                  }}
+                  sx={{ color: "red" }}
+                >
+                  削除
+                </Button>
+              </Box>
+            );
+          })}
+          <FormControl variant="standard" sx={{ pl: 2 }} fullWidth>
+            <TextField
+              autoFocus
+              margin="dense"
+              name="newSubItem"
+              label="新規 サブアイテム"
+              type="text"
+              fullWidth
+              variant="standard"
+              value={targetItem?.newSubItem}
+              onChange={handleOnChangeTargetItem}
+            />
+          </FormControl>
         </DialogContent>
         <DialogActions>
+          <Button onClick={openDeleteDialog} sx={{ color: "red" }}>
+            削除
+          </Button>
+          <div style={{ flexGrow: 1 }} />
           <Button onClick={closeEditDialog}>戻る</Button>
           <Button onClick={handleUpdateItem}>更新</Button>
         </DialogActions>
@@ -247,27 +383,52 @@ const MeasuredItems = () => {
         </DialogActions>
       </Dialog>
 
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "end",
-          alignItems: "center",
-          mb: 1,
-        }}
-      >
-        <Button onClick={openNewDialog}>追加</Button>
-        <Button onClick={editModeOn}>編集</Button>
-      </Box>
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "end",
-          alignItems: "center",
-          mb: 1,
-        }}
-      >
-        <Typography>合計(分)</Typography>
-      </Box>
+      {editMode ? (
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "end",
+            alignItems: "center",
+            mb: 1,
+            position: "sticky",
+            top: 0,
+            backgroundColor: "white",
+            zIndex: 1200,
+            // boxShadow:1
+          }}
+        >
+          <Button onClick={editModeToggle}>閉じる</Button>
+        </Box>
+      ) : (
+        <>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "end",
+              alignItems: "center",
+              mb: 1,
+              position: "sticky",
+              top: 0,
+              backgroundColor: "white",
+              zIndex: 1200,
+              // boxShadow:1
+            }}
+          >
+            <Button onClick={openNewDialog}>追加</Button>
+            <Button onClick={editModeToggle}>編集</Button>
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "end",
+              alignItems: "center",
+              mb: 1,
+            }}
+          >
+            <Typography>合計(分)</Typography>
+          </Box>
+        </>
+      )}
       {items?.map((item: any, index: number) => {
         const _id = item["_id"];
         const baseTime = 60 * 5; // 1日5時間同じ事やってればすごいということで。（なんとなく）
@@ -275,7 +436,7 @@ const MeasuredItems = () => {
           ? orgFloor(totalTimes[_id] / 60, 2)
           : 0;
         const rate = (totalTime / baseTime) * 100;
-        console.log(rate);
+        // console.log(rate);
 
         if (!item.isDelete)
           return (
@@ -284,31 +445,31 @@ const MeasuredItems = () => {
               key={index}
               sx={{ mb: 1, display: "flex", alignItems: "center" }}
             >
-              {editMode && (
-                <Grid item xs={2}>
-                  <IconButton onClick={() => handleClickDeleteIcon(item)}>
-                    <DeleteIcon />
-                  </IconButton>
-                </Grid>
-              )}
-              <Grid item xs={editMode ? 8 : 10}>
+              <Grid item xs={editMode ? 12 : 10}>
                 <Button
                   variant={
                     measure.measuringItem?.["_id"] === _id
                       ? "outlined"
                       : "contained"
                   }
-                  onClick={() => handleClickItem(_id)}
+                  onClick={
+                    editMode
+                      ? () => handleClickEditIcon(item)
+                      : () => handleClickItem(_id)
+                  }
                   sx={{
                     flexGrow: 1,
                     mr: 1,
                     border: "none",
-                    background:
-                      measure.measuringItem?.["_id"] === _id
-                        ? `linear-gradient(90deg, #3abb9c5c ${rate}%, #ad76769e ${rate}% 100%)`
-                        : `linear-gradient(90deg, #3abb9c ${rate}%, #ad7676 ${
+                    background: !editMode
+                      ? measure.measuringItem?.["_id"] === _id
+                        ? `linear-gradient(75deg, ${item.color}5c ${rate}%, #aaaaaa9e ${rate}% 100%)`
+                        : `linear-gradient(75deg, ${
+                            item.color
+                          } ${rate}%, #aaaaaa ${
                             rate === 0 ? 0 : rate + 3
-                          }% 100%)`,
+                          }% 100%)`
+                      : item.color,
                     ":hover": {
                       border: "grey solid 1px",
                     },
@@ -318,13 +479,6 @@ const MeasuredItems = () => {
                   {item.name}
                 </Button>
               </Grid>
-              {editMode && (
-                <Grid item xs={2}>
-                  <IconButton onClick={() => handleClickEditIcon(item)}>
-                    <EditIcon />
-                  </IconButton>
-                </Grid>
-              )}
               {!editMode && (
                 <Grid item xs={2}>
                   <Typography textAlign="right">{totalTime}分</Typography>
