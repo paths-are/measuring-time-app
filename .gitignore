@@ -29,3 +29,7 @@ tools/exports/
 tools/node_modules/
 tools/serviceAccountKey.json
 02_Timer-App.gsheet - ショートカット.lnk
+
+# PWA
+public/sw.js
+public/workbox-1846d813.js
