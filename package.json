@@ -18,13 +18,14 @@
     "next-pwa": "^5.4.4",
     "react": "latest",
     "react-dom": "latest",
+    "react-scrollbars-custom": "^4.0.27",
     "react-swipeable-views": "^0.14.0",
     "recoil": "^0.5.2",
     "uuid": "^8.3.2"
   },
   "config": {
     "pid": "timer-app-d0e7e",
-    "firestoreOutDir": "20211205_1605",
+    "firestoreOutDir": "20211209_2100",
     "_firestoreOutDir": "20211130_1017"
   },
   "scripts": {

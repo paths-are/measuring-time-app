@@ -10,6 +10,8 @@ import { RecoilRoot } from "recoil";
 
 import { useAuth } from "../src/lib/auth";
 
+import "@/src/styles/global.css";
+
 type Props = {
   children: JSX.Element;
 };
