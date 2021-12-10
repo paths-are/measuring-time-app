@@ -50,7 +50,6 @@ const MeasuredItems = () => {
     "#ffeb3b",
     "#673ab7",
     "#757575",
-    "yellow",
   ];
 
   /**
@@ -68,7 +67,7 @@ const MeasuredItems = () => {
       _id: uuidv4(),
       name: newItem,
       category: "work1",
-      color: "yellow",
+      color: "#3f51b5",
     });
     setNewItem("");
   };
@@ -458,19 +457,13 @@ const MeasuredItems = () => {
                   sx={{
                     flexGrow: 1,
                     mr: 1,
-                    border: "none",
                     background: !editMode
                       ? measure.measuringItem?.["_id"] === _id
-                        ? `linear-gradient(75deg, ${item.color}5c ${rate}%, #aaaaaa9e ${rate}% 100%)`
-                        : `linear-gradient(75deg, ${
+                        ? `linear-gradient(75deg, ${item.color}f3 ${rate}%, ${item.color}b0 ${rate}% 100%)`
+                        : `linear-gradient(75deg, ${item.color}f3 ${rate}%, ${
                             item.color
-                          } ${rate}%, #aaaaaa ${
-                            rate === 0 ? 0 : rate + 3
-                          }% 100%)`
+                          }b0 ${rate === 0 ? 0 : rate + 3}% 100%)`
                       : item.color,
-                    ":hover": {
-                      border: "grey solid 1px",
-                    },
                   }}
                   fullWidth
                 >

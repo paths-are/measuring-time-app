@@ -23,3 +23,22 @@ export const measure = atom<any>({
     times: [], // 計測された時間
   },
 });
+
+export const measureHistory = atom<any>({
+  key: "measureHistory",
+  default: [
+    {
+      20211201: {
+        measuringItem: {
+          // 計測中のアイテム
+          isActive: false,
+          _id: null,
+          name: null,
+          start: null,
+          end: null,
+        },
+        times: [], // 計測された時間
+      },
+    },
+  ],
+});
