@@ -2,9 +2,18 @@ import * as React from "react";
 import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import { Button } from "@mui/material";
+import { Button, TextField, Divider } from "@mui/material";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
+import Dialog from "@mui/material/Dialog";
+import DialogActions from "@mui/material/DialogActions";
+import DialogContent from "@mui/material/DialogContent";
+import DialogContentText from "@mui/material/DialogContentText";
+import DialogTitle from "@mui/material/DialogTitle";
+import InputLabel from "@mui/material/InputLabel";
+import MenuItem from "@mui/material/MenuItem";
+import FormControl from "@mui/material/FormControl";
+import Select from "@mui/material/Select";
 
 import { useUser, login, logout } from "@/src/lib/auth";
 import { fetchMeasuredItem, fetchMeasuredTime } from "@/src/lib/firestore";
@@ -16,11 +25,14 @@ import {
   measuredItems,
   totalTimes as totalTimesAtom,
   measure as measureAtom,
+  measureHistory as measureHistoryAtom,
 } from "@/src/recoilAtoms";
-import { useRecoilState, useSetRecoilState } from "recoil";
+import { useRecoilValue, useRecoilState, useSetRecoilState } from "recoil";
 import SwipeableViews from "react-swipeable-views";
 import { useTheme } from "@mui/material/styles";
 import { Scrollbar } from "react-scrollbars-custom";
+
+const pad = (n: number) => (n > 9 ? String(n) : "0" + n);
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -71,14 +83,19 @@ function a11yProps(index: number) {
 
 export default function Index() {
   const user: any = useUser();
+  const items = useRecoilValue(measuredItems);
   const [value, setValue] = React.useState(0);
   const theme = useTheme();
   const [measure, setMeasure] = useRecoilState(measureAtom);
+  const [measureHistory, setMeasureHistory] =
+    useRecoilState(measureHistoryAtom);
   const setItems = useSetRecoilState(measuredItems);
   const setTotalTimes = useSetRecoilState(totalTimesAtom);
 
   const fixedIds = ["app-header", "top-container", "tab-container"];
   const [fixedHeight, setFixedHeight] = React.useState(0);
+
+  const [editDialog, setEditDialog] = React.useState(false);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     console.log(event);
@@ -95,6 +112,58 @@ export default function Index() {
 
   const handleChangeIndex = (index: number) => {
     setValue(index);
+  };
+
+  /**
+   * Edit
+   */
+  const toggleEditDialog = () => {
+    setEditDialog(!editDialog);
+  };
+  const closeEditDialog = () => {
+    setEditDialog(false);
+  };
+  const handleChangeMeasuringItem = (e: any) => {
+    if (e.target.name === "measuredItem") {
+      const result: any = items.find(
+        (item: any) => item["_id"] === e.target.value
+      );
+      setMeasure({
+        ...measure,
+        measuringItem: {
+          ...measure.measuringItem,
+          _id: e.target.value,
+          name: result.name,
+        },
+      });
+      return;
+    }
+    if (e.target.name === "startTimeHours") {
+      return;
+    }
+    if (e.target.name === "startTimeMinutes") {
+      return;
+    }
+    if (e.target.name === "measuredItemMemo") {
+      setMeasure({
+        ...measure,
+        measuringItem: { ...measure.measuringItem, memo: e.target.value },
+      });
+      return;
+    }
+  };
+  const deleteMeasuringItem = () => {
+    setMeasure({
+      ...measure,
+      measuringItem: {
+        isActive: false,
+        _id: null,
+        name: null,
+        start: null,
+        end: null,
+      },
+    });
+    toggleEditDialog()
   };
 
   /**
@@ -137,6 +206,9 @@ export default function Index() {
     };
     if (user) init();
   }, [measure.times]);
+  React.useEffect(() => {
+    console.log(measureHistory);
+  }, [measureHistory]);
 
   /**
    * times初期化系
@@ -144,6 +216,7 @@ export default function Index() {
   const renderMeasuredTimesTable = (response: any): void => {
     const today = formatDate(new Date(), "YYYYMMDD");
     // const today = formatDate(new Date(), "2021/12/08 00:11:11");
+    setMeasureHistory(response);
     if (today in response) {
       console.log(today);
       setMeasure(response[today]);
@@ -168,8 +241,102 @@ export default function Index() {
               <div style={{ flexGrow: 1 }} />
               <Button onClick={handleLogout}>ログアウト</Button>
             </Box>
+            <Dialog open={editDialog} onClose={closeEditDialog}>
+              <DialogTitle>項目の編集</DialogTitle>
+              <DialogContent>
+                <DialogContentText>アイテムを編集しよう！</DialogContentText>
+                <FormControl variant="standard" sx={{ p: 1 }} fullWidth>
+                  <InputLabel>アイテム</InputLabel>
+                  <Select
+                    name="measuredItem"
+                    value={measure.measuringItem?._id}
+                    label="アイテム"
+                    onChange={handleChangeMeasuringItem}
+                  >
+                    {(() => {
+                      const selectItems = [];
+                      for (let i = 0; i < items?.length; i++) {
+                        if (!items[i].isDelete) {
+                          selectItems.push(
+                            <MenuItem key={pad(i)} value={items[i]._id}>
+                              {items[i].name}
+                            </MenuItem>
+                          );
+                        }
+                      }
+                      return selectItems;
+                    })()}
+                  </Select>
+                </FormControl>
+                <Divider sx={{ my: 1 }} />
+                <Box sx={{ display: "flex", alignItems: "center" }}>
+                  <FormControl variant="standard" sx={{ p: 1 }}>
+                    <InputLabel>時間</InputLabel>
+                    <Select
+                      name="startTimeHours"
+                      value={formatDate(measure.measuringItem?.start, "hh")}
+                      label="時間"
+                      onChange={handleChangeMeasuringItem}
+                    >
+                      {(() => {
+                        const items = [];
+                        for (let i = 0; i < 24; i++) {
+                          items.push(
+                            <MenuItem key={pad(i)} value={pad(i)}>
+                              {pad(i)}
+                            </MenuItem>
+                          );
+                        }
+                        return items;
+                      })()}
+                    </Select>
+                  </FormControl>
+                  <FormControl variant="standard" sx={{ p: 1 }}>
+                    <InputLabel>分</InputLabel>
+                    <Select
+                      name="startTimeMinutes"
+                      value={formatDate(measure.measuringItem?.start, "mm")}
+                      label="分"
+                      onChange={handleChangeMeasuringItem}
+                    >
+                      {(() => {
+                        const items = [];
+                        for (let i = 0; i < 60; i++) {
+                          items.push(
+                            <MenuItem key={pad(i)} value={pad(i)}>
+                              {pad(i)}
+                            </MenuItem>
+                          );
+                        }
+                        return items;
+                      })()}
+                    </Select>
+                  </FormControl>
+                </Box>
+                <Divider sx={{ my: 1 }} />
+                <TextField
+                  margin="dense"
+                  label="メモ"
+                  type="text"
+                  name="measuredItemMemo"
+                  multiline
+                  rows={2}
+                  fullWidth
+                  variant="standard"
+                  value={measure.measuringItem?.memo}
+                  onChange={handleChangeMeasuringItem}
+                />
+              </DialogContent>
+              <DialogActions>
+                <Button onClick={deleteMeasuringItem} sx={{ color: "red" }}>
+                  削除
+                </Button>
+                <div style={{ flexGrow: 1 }} />
+                <Button onClick={toggleEditDialog}>戻る</Button>
+              </DialogActions>
+            </Dialog>
 
-            <Box id="top-container">
+            <Box id="top-container" onClick={toggleEditDialog}>
               <Typography align="center">
                 計測中のアイテム：{measure.measuringItem.name}
               </Typography>
