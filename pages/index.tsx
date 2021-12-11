@@ -14,9 +14,15 @@ import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
+import LogoutIcon from "@mui/icons-material/Logout";
+import IconButton from "@mui/material/IconButton";
 
 import { useUser, login, logout } from "@/src/lib/auth";
-import { fetchMeasuredItem, fetchMeasuredTime } from "@/src/lib/firestore";
+import {
+  fetchMeasuredItem,
+  fetchMeasuredTime,
+  updateMeasuredTime,
+} from "@/src/lib/firestore";
 import { formatDate } from "@/src/lib/utils";
 import MeasuredItems from "@/src/components/MeasuredItems";
 import MeasuredTimesTable from "@/src/components/MeasuredTimesTable";
@@ -124,18 +130,23 @@ export default function Index() {
     setEditDialog(false);
   };
   const handleChangeMeasuringItem = (e: any) => {
+    let newMeasure: any = {};
+
     if (e.target.name === "measuredItem") {
       const result: any = items.find(
         (item: any) => item["_id"] === e.target.value
       );
-      setMeasure({
+      newMeasure = {
         ...measure,
         measuringItem: {
           ...measure.measuringItem,
           _id: e.target.value,
           name: result.name,
+          subItemId: null,
+          subItemName: null,
         },
-      });
+      };
+      setMeasure(newMeasure);
       return;
     }
     if (e.target.name === "startTimeHours") {
@@ -145,12 +156,17 @@ export default function Index() {
       return;
     }
     if (e.target.name === "measuredItemMemo") {
-      setMeasure({
+      newMeasure = {
         ...measure,
         measuringItem: { ...measure.measuringItem, memo: e.target.value },
-      });
+      };
+      setMeasure(newMeasure);
       return;
     }
+
+    const now = new Date();
+    const yyyymmdd = formatDate(now, "YYYYMMDD");
+    updateMeasuredTime(user.uid, yyyymmdd, newMeasure);
   };
   const deleteMeasuringItem = () => {
     setMeasure({
@@ -163,7 +179,7 @@ export default function Index() {
         end: null,
       },
     });
-    toggleEditDialog()
+    toggleEditDialog();
   };
 
   /**
@@ -196,11 +212,24 @@ export default function Index() {
     const init = async () => {
       let totalTimes: any = {};
       measure.times?.map((time: any) => {
+        const duration = (time.end - time.start) / 1000;
         const _id = time["itemId"];
+        const subItemId = time["subItemId"] || null;
 
-        totalTimes[_id] = totalTimes[_id]
-          ? totalTimes[_id] + (time.end - time.start) / 1000
-          : (time.end - time.start) / 1000;
+        if (!totalTimes[_id]) totalTimes[_id] = {};
+
+        if (subItemId) {
+          totalTimes[_id][subItemId] = totalTimes[_id][subItemId]
+            ? totalTimes[_id][subItemId] + duration
+            : duration;
+        } else {
+          totalTimes[_id][_id] = totalTimes[_id][_id]
+            ? totalTimes[_id][_id] + duration
+            : duration;
+        }
+        totalTimes[_id].sum = totalTimes[_id].sum
+          ? totalTimes[_id].sum + duration
+          : duration;
       });
       setTotalTimes(totalTimes);
     };
@@ -236,11 +265,7 @@ export default function Index() {
       <div>
         {user !== null ? (
           <>
-            <Box id="app-header" sx={{ display: "flex" }}>
-              <h1>Timer App</h1>
-              <div style={{ flexGrow: 1 }} />
-              <Button onClick={handleLogout}>ログアウト</Button>
-            </Box>
+            {/* 計測中のアイテム変更ダイアログ */}
             <Dialog open={editDialog} onClose={closeEditDialog}>
               <DialogTitle>項目の編集</DialogTitle>
               <DialogContent>
@@ -336,17 +361,52 @@ export default function Index() {
               </DialogActions>
             </Dialog>
 
-            <Box id="top-container" onClick={toggleEditDialog}>
-              <Typography align="center">
-                計測中のアイテム：{measure.measuringItem.name}
-              </Typography>
-              <Typography align="center">
-                開始時間：
-                {measure.measuringItem.start
-                  ? formatDate(measure.measuringItem.start, "hh:mm")
-                  : null}
-              </Typography>
+            <Box
+              id="top-container"
+              display="flex"
+              sx={{
+                py: 2,
+                px: 1,
+              }}
+            >
+              <Box
+                flexGrow={1}
+                display="flex"
+                justifyContent="center"
+                alignItems="center"
+              >
+                {measure.measuringItem.isActive && (
+                  <>
+                    {/* <IconButton onClick={toggleEditDialog}>
+                      <StopCircleOutlinedIcon />
+                    </IconButton> */}
+                    <Button
+                      variant="text"
+                      sx={{ py: 0, flexGrow: 1 }}
+                      onClick={toggleEditDialog}
+                    >
+                      <Typography align="left" display="inline">
+                        {measure.measuringItem.name}
+                        {measure.measuringItem.subItemName &&
+                          ` >> ${measure.measuringItem.subItemName}`}
+                        <Typography align="left" display="inline">
+                          ：
+                        </Typography>
+                      </Typography>
+                      <Typography align="left" display="inline">
+                        {measure.measuringItem.start &&
+                          formatDate(measure.measuringItem.start, "hh:mm")}
+                        ~
+                      </Typography>
+                    </Button>
+                  </>
+                )}
+              </Box>
+              <IconButton aria-label="logout" onClick={handleLogout}>
+                <LogoutIcon />
+              </IconButton>
             </Box>
+
             <Box sx={{ width: "100%" }}>
               <Box
                 id="tab-container"
