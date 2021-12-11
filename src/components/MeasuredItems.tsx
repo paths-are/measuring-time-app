@@ -1,13 +1,17 @@
 import * as React from "react";
-import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import { Button, TextField, Grid } from "@mui/material";
-
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
+import IconButton from "@mui/material/IconButton";
+import DescriptionIcon from "@mui/icons-material/Description";
+import FileOpenOutlinedIcon from "@mui/icons-material/FileOpenOutlined";
+import ExpandMoreOutlinedIcon from "@mui/icons-material/ExpandMoreOutlined";
+import ExpandLessOutlinedIcon from "@mui/icons-material/ExpandLessOutlined";
+
 import { v4 as uuidv4 } from "uuid";
 import { useUser } from "@/src/lib/auth";
 import {
@@ -29,8 +33,23 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 
+function createNewTime(measuringItem: any) {
+  let newTime: any = {};
+  newTime = {
+    itemId: measuringItem["_id"],
+    _id: `time_${uuidv4()}`,
+    start: measuringItem.start,
+    end: new Date().getTime(),
+  };
+  measuringItem.subItemId
+    ? (newTime.subItemId = measuringItem.subItemId)
+    : null;
+  measuringItem.memo ? (newTime.memo = measuringItem.memo) : null;
+  return newTime;
+}
+
 const MeasuredItems = () => {
-  const [items, setItems] = useRecoilState(measuredItems);
+  const items = useRecoilValue(measuredItems);
   const [measure, setMeasure] = useRecoilState(measureAtom);
 
   const user: any = useUser();
@@ -41,6 +60,8 @@ const MeasuredItems = () => {
   const [targetItem, setTargetItem] = React.useState<any>({});
   const totalTimes = useRecoilValue(totalTimesAtom);
   const [editMode, setEditMode] = React.useState(false);
+  const [noteEditDialog, setNoteEditDialog] = React.useState(false);
+  // const [note, setNote] = React.useState(null);
 
   const colorList = [
     "#3f51b5",
@@ -87,6 +108,7 @@ const MeasuredItems = () => {
   const handleDeleteItem = () => {
     deleteMeasuredItem(user.uid, targetItem);
     closeDeleteDialog();
+    closeEditDialog();
   };
 
   /**
@@ -104,6 +126,7 @@ const MeasuredItems = () => {
   };
   const closeEditDialog = () => {
     setEditDialog(false);
+    setTargetItem({});
   };
   const handleDeleteSubItem = (subItemId: string) => {
     let newSubItems = [...targetItem.subItems];
@@ -163,87 +186,131 @@ const MeasuredItems = () => {
 
     newItems.splice(index, 1, newItem);
 
-    setItems(newItems);
-    console.log("newItems", newItems);
-
     updateMeasuredItem(user.uid, newItems);
     setTargetItem({});
     closeEditDialog();
+    closeNoteDialog();
   };
 
   /**
    * 計測アイテムがクリックされたときの処理
    * @param _id
    */
-  const handleClickItem = (_id: string): void => {
-    const result: any = items.find((item: any) => item["_id"] === _id);
-    const newMeasuringItem: any = {};
+  const handleClickItem = (_id: string, subItemId?: string): void => {
+    console.log("subItemId", subItemId);
+    const clickedItem: any = items.find((item: any) => item["_id"] === _id);
+    const clickedSubItem: any = subItemId
+      ? clickedItem.subItems.find((item: any) => item["_id"] === subItemId)
+      : null;
+    const measuringItem: any = {};
+
+    // スタート
+    function startMeasuringItem(): void {
+      measuringItem.isActive = true;
+
+      measuringItem["_id"] = _id;
+      measuringItem.start = new Date().getTime();
+      measuringItem.name = clickedItem.name;
+
+      if (subItemId) {
+        measuringItem.subItemId = subItemId;
+        measuringItem.subItemName = clickedSubItem.name;
+      }
+    }
+    // ストップ
+    function stopMeasuringItem(): void {
+      measuringItem.isActive = false;
+
+      measuringItem["_id"] = null;
+      measuringItem.start = null;
+      measuringItem.name = null;
+      measuringItem.subItemId ? (measuringItem.subItemId = null) : null;
+    }
 
     let newMeasure: any = {};
 
     if (!measure.measuringItem.isActive) {
       // アイテムクリック時（何も計測されていない状態）
-      newMeasuringItem.isActive = true;
+      startMeasuringItem();
 
-      newMeasuringItem["_id"] = _id;
-      newMeasuringItem.start = new Date().getTime();
-      newMeasuringItem.name = result.name;
-      newMeasure = { ...measure, measuringItem: newMeasuringItem };
+      newMeasure = { ...measure, measuringItem: measuringItem };
       setMeasure(newMeasure);
-      // setMeasure({ ...measure, measuringItem: newMeasuringItem });
+      // } else if (!measure.measuringItem.subItemId) {
     } else {
-      // アイテムクリック時（計測されている状態）
-      if (measure.measuringItem?.["_id"] === _id) {
+      // アイテムクリック時（計測されている状態） // サブアイテムが計測されていないとき
+      if (
+        measure.measuringItem?.["_id"] === _id &&
+        measure.measuringItem?.["subItemId"] === subItemId
+      ) {
         // 同じアイテムをクリックして停止するとき
-        const defaultMeasuringItem = {
-          isActive: false,
-          _id: null,
-          name: null,
-          start: null,
-          end: null,
-        };
-        const newTime = {
-          itemId: measure.measuringItem["_id"],
-          _id: `time_${uuidv4()}`,
-          start: measure.measuringItem.start,
-          end: new Date().getTime(),
-        };
+        stopMeasuringItem();
+
+        const newTime = createNewTime(measure.measuringItem);
+
         newMeasure = {
-          measuringItem: defaultMeasuringItem,
+          measuringItem: measuringItem,
           times: [...measure.times, newTime],
         };
         setMeasure(newMeasure);
       }
-      if (measure.measuringItem?.["_id"] !== _id) {
+      if (
+        measure.measuringItem?.["_id"] !== _id ||
+        measure.measuringItem?.["subItemId"] !== subItemId
+      ) {
         // 　別のアイテムをクリックして違うアイテムの計測を開始するとき
-        newMeasuringItem.isActive = true;
+        startMeasuringItem();
 
-        newMeasuringItem["_id"] = _id;
-        newMeasuringItem.start = new Date().getTime();
-        newMeasuringItem.name = result.name;
-        const newTime = {
-          itemId: measure.measuringItem["_id"],
-          _id: `time_${uuidv4()}`,
-          start: measure.measuringItem.start,
-          end: new Date().getTime(),
-        };
+        const newTime = createNewTime(measure.measuringItem);
+
         newMeasure = {
-          measuringItem: newMeasuringItem,
+          measuringItem: measuringItem,
           times: [...measure.times, newTime],
         };
         setMeasure(newMeasure);
       }
     }
 
+    console.log("newMeasure", newMeasure);
     const now = new Date();
     const yyyymmdd = formatDate(now, "YYYYMMDD");
     updateMeasuredTime(user.uid, yyyymmdd, newMeasure);
   };
 
+  /**
+   * サブアイテム表示機能
+   */
+  const onClickExpandSubItems = (_id: string): void => {
+    const newItems = [...items];
+    let obj = newItems.find((x: any) => x["_id"] === _id);
+    let index = newItems.indexOf(obj);
+
+    let newItem = { ...obj, expandSubItems: !obj.expandSubItems };
+
+    newItems.splice(index, 1, newItem);
+
+    updateMeasuredItem(user.uid, newItems);
+  };
+
+  /**
+   * ノート機能
+   */
+  const openNoteDialog = () => {
+    setNoteEditDialog(true);
+  };
+  const closeNoteDialog = () => {
+    setNoteEditDialog(false);
+  };
+  const handleClickEmptyNote = (item: any): void => {
+    openNoteDialog();
+    setTargetItem(item);
+  };
+  const handleOnChangeNote = (e: any) => {
+    setTargetItem({ ...targetItem, note: e.target.value });
+  };
   return (
     <>
       {/* 項目追加フォーム */}
-      <Dialog open={newDialog} onClose={closeNewDialog}>
+      <Dialog open={newDialog} onClose={closeNewDialog} fullWidth>
         <DialogTitle>項目の追加</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -268,7 +335,7 @@ const MeasuredItems = () => {
       </Dialog>
 
       {/* 項目 編集フォーム */}
-      <Dialog open={editDialog} onClose={closeEditDialog}>
+      <Dialog open={editDialog} onClose={closeEditDialog} fullWidth>
         <DialogTitle>項目の編集</DialogTitle>
         <DialogContent>
           <DialogContentText>アイテムを編集しよう！</DialogContentText>
@@ -367,7 +434,7 @@ const MeasuredItems = () => {
       </Dialog>
 
       {/* 項目削除確認ダイアログ */}
-      <Dialog open={deleteDialog} onClose={closeNewDialog}>
+      <Dialog open={deleteDialog} onClose={closeNewDialog} fullWidth>
         <DialogTitle>注意</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -377,6 +444,32 @@ const MeasuredItems = () => {
         <DialogActions>
           <Button onClick={closeDeleteDialog}>いいえ</Button>
           <Button onClick={handleDeleteItem}>はい</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* ノート機能 */}
+      <Dialog open={noteEditDialog} onClose={closeNoteDialog} fullWidth>
+        <DialogTitle>{targetItem?.name}のノート</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            ノートやTodoとしてメモしておきたいことを追加しよう！
+          </DialogContentText>
+          <TextField
+            margin="dense"
+            id="note"
+            label="ノート"
+            type="text"
+            fullWidth
+            multiline
+            rows={10}
+            variant="filled"
+            value={targetItem?.note}
+            onChange={handleOnChangeNote}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeNoteDialog}>戻る</Button>
+          <Button onClick={handleUpdateItem}>更新</Button>
         </DialogActions>
       </Dialog>
 
@@ -414,26 +507,23 @@ const MeasuredItems = () => {
             <Button onClick={openNewDialog}>追加</Button>
             <Button onClick={editModeToggle}>編集</Button>
           </Box>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "end",
-              alignItems: "center",
-              mb: 1,
-            }}
-          >
-            <Typography>合計(分)</Typography>
-          </Box>
         </>
       )}
       {items?.map((item: any, index: number) => {
         const _id = item["_id"];
         const baseTime = 60 * 5; // 1日5時間同じ事やってればすごいということで。（なんとなく）
-        const totalTime = totalTimes[_id]
-          ? orgFloor(totalTimes[_id] / 60, 2)
+        const totalTime = totalTimes[_id]?.sum
+          ? orgFloor(totalTimes[_id]?.sum / 60, 2)
           : 0;
-        const rate = (totalTime / baseTime) * 100;
-        // console.log(rate);
+        const totalTimeItem = totalTimes[_id]?.[_id]
+          ? orgFloor(totalTimes[_id]?.[_id] / 60, 2)
+          : 0;
+        const rate = (totalTimeItem / baseTime) * 100;
+        const isActive =
+          measure.measuringItem?.["_id"] === _id &&
+          !measure.measuringItem?.subItemId
+            ? true
+            : false;
 
         if (!item.isDelete)
           return (
@@ -442,13 +532,12 @@ const MeasuredItems = () => {
               key={index}
               sx={{ mb: 1, display: "flex", alignItems: "center" }}
             >
-              <Grid item xs={editMode ? 12 : 10}>
+              <Grid item xs={editMode ? 12 : 12} sx={{ display: "flex" }}>
+                <IconButton onClick={() => handleClickEmptyNote(item)}>
+                  {item.note ? <DescriptionIcon /> : <FileOpenOutlinedIcon />}
+                </IconButton>
                 <Button
-                  variant={
-                    measure.measuringItem?.["_id"] === _id
-                      ? "outlined"
-                      : "contained"
-                  }
+                  variant={isActive ? "outlined" : "contained"}
                   onClick={
                     editMode
                       ? () => handleClickEditIcon(item)
@@ -457,24 +546,94 @@ const MeasuredItems = () => {
                   sx={{
                     flexGrow: 1,
                     mr: 1,
-                    background: !editMode
-                      ? measure.measuringItem?.["_id"] === _id
-                        ? `linear-gradient(75deg, ${item.color}f3 ${rate}%, ${item.color}b0 ${rate}% 100%)`
-                        : `linear-gradient(75deg, ${item.color}f3 ${rate}%, ${
-                            item.color
-                          }b0 ${rate === 0 ? 0 : rate + 3}% 100%)`
-                      : item.color,
+                    background: editMode
+                      ? item.color
+                      : isActive
+                      ? null
+                      : `linear-gradient(75deg, ${item.color}f3 ${rate}%, ${
+                          item.color
+                        }b0 ${rate === 0 ? 0 : rate + 3}% 100%)`,
                   }}
                   fullWidth
                 >
                   {item.name}
+                  <span style={{ flexGrow: 1 }}></span>
+                  {totalTimeItem === totalTime
+                    ? `${totalTime}分`
+                    : `${totalTimeItem}分/${totalTime}分`}
                 </Button>
+                {!editMode && (
+                  <IconButton
+                    onClick={() => {
+                      onClickExpandSubItems(_id);
+                    }}
+                    sx={{ visibility: item.subItems ? null : "hidden" }}
+                  >
+                    {item.expandSubItems ? (
+                      <ExpandLessOutlinedIcon />
+                    ) : (
+                      <ExpandMoreOutlinedIcon />
+                    )}
+                  </IconButton>
+                )}
               </Grid>
-              {!editMode && (
-                <Grid item xs={2}>
-                  <Typography textAlign="right">{totalTime}分</Typography>
-                </Grid>
-              )}
+              {!editMode &&
+                item.expandSubItems &&
+                item.subItems?.map((subItem: any, index: number) => {
+                  const subItemId = subItem["_id"];
+                  const baseTime = 60 * 5; // 1日5時間同じ事やってればすごいということで。（なんとなく）
+
+                  const totalTimeSubItem = totalTimes[_id]?.[subItemId]
+                    ? orgFloor(totalTimes[_id]?.[subItemId] / 60, 2)
+                    : 0;
+                  const rate = (totalTimeSubItem / baseTime) * 100;
+                  return (
+                    <Grid
+                      container
+                      key={index}
+                      sx={{
+                        my: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "right",
+                      }}
+                    >
+                      <Grid item xs={10} sx={{ display: "flex" }}>
+                        <Button
+                          variant={
+                            measure.measuringItem?.["subItemId"] === subItemId
+                              ? "outlined"
+                              : "contained"
+                          }
+                          onClick={() => handleClickItem(_id, subItemId)}
+                          sx={{
+                            flexGrow: 1,
+                            mr: 1,
+                            background: editMode
+                              ? item.color
+                              : measure.measuringItem?.["subItemId"] ===
+                                subItemId
+                              ? null
+                              : `linear-gradient(75deg, ${
+                                  item.color
+                                }f3 ${rate}%, ${item.color}b0 ${
+                                  rate === 0 ? 0 : rate + 3
+                                }% 100%)`,
+                          }}
+                          fullWidth
+                        >
+                          {subItem.name}
+                          <span style={{ flexGrow: 1 }}></span>
+                          {totalTimeSubItem}分
+                        </Button>
+                        {/* 同じ幅を保つために同じエレメントを非表示で作成。 */}
+                        <IconButton sx={{ visibility: "hidden" }}>
+                          <ExpandMoreOutlinedIcon />
+                        </IconButton>
+                      </Grid>
+                    </Grid>
+                  );
+                })}
             </Grid>
           );
       })}

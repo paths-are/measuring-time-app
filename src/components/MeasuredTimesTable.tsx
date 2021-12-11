@@ -371,6 +371,7 @@ const MeasuredTimesTable = React.memo(() => {
             <TableRow>
               <TableCell align="left">番号</TableCell>
               <TableCell>項目</TableCell>
+              <TableCell align="left">サブ</TableCell>
               <TableCell align="left">memo</TableCell>
               <TableCell align="right">開始</TableCell>
               <TableCell align="right">終了</TableCell>
@@ -379,9 +380,14 @@ const MeasuredTimesTable = React.memo(() => {
           </TableHead>
           <TableBody>
             {measure.times?.map((time: any, index: number) => {
-              const result: any = items.find(
+              const measuredItem: any = items.find(
                 (item: any) => item["_id"] === time.itemId
               );
+              const measuredSubItem: any = measuredItem.subItems
+                ? measuredItem.subItems.find(
+                    (subItem: any) => subItem["_id"] === time.subItemId
+                  )
+                : null;
               return (
                 <TableRow
                   key={index}
@@ -395,9 +401,10 @@ const MeasuredTimesTable = React.memo(() => {
                 >
                   <TableCell align="left">{index}</TableCell>
                   <TableCell component="th" scope="row">
-                    {result?.name}
+                    {measuredItem?.name}
                   </TableCell>
-                  <TableCell align="left">{time.memo}</TableCell>
+                  <TableCell align="left">{measuredSubItem?.name}</TableCell>
+                  <TableCell align="left">{time?.memo}</TableCell>
                   <TableCell align="right">
                     {formatDate(time.start, "hh:mm")}
                   </TableCell>
