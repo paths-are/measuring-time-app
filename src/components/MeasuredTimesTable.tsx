@@ -11,6 +11,7 @@ import { useRecoilValue, useRecoilState } from "recoil";
 import { measuredItems, measure as measureAtom } from "@/src/recoilAtoms";
 import { updateMeasuredTime } from "@/src/lib/firestore";
 import { useUser } from "@/src/lib/auth";
+import { withinRange } from "@/src/lib/utils";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -29,6 +30,7 @@ const MeasuredTimesTable = React.memo(() => {
   const items = useRecoilValue(measuredItems);
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [selectedTime, setSelectedTime] = React.useState<any | null>(null);
+  const [rangeOn, setRangeOn] = React.useState(true);
 
   const handleMemoChange = (event: any) => {
     setSelectedTime({
@@ -135,9 +137,10 @@ const MeasuredTimesTable = React.memo(() => {
 
     setMeasure(newMeasure);
     console.log("newMeasure", newMeasure);
-    const now = new Date();
-    const yyyymmdd = formatDate(now, "YYYYMMDD");
-    updateMeasuredTime(user.uid, yyyymmdd, newMeasure);
+
+    const tmpMonth = "202112";
+    const updateKey = "times";
+    updateMeasuredTime(user.uid, tmpMonth, newMeasure, updateKey);
   };
 
   const handleClickDialogOpen = (time: any) => {
@@ -164,9 +167,12 @@ const MeasuredTimesTable = React.memo(() => {
     };
 
     setMeasure(newMeasure);
-    const now = new Date();
-    const yyyymmdd = formatDate(now, "YYYYMMDD");
-    updateMeasuredTime(user.uid, yyyymmdd, newMeasure);
+
+    const tmpMonth = "202112";
+    const updateKey = "times";
+    // TODO arrayRemove()を使えそう？
+    console.log("newMeasure", newMeasure);
+    updateMeasuredTime(user.uid, tmpMonth, newMeasure, updateKey);
 
     setDialogOpen(false);
   };
@@ -186,9 +192,15 @@ const MeasuredTimesTable = React.memo(() => {
 
     setMeasure(newMeasure);
     console.log("newMeasure", newMeasure);
-    const now = new Date();
-    const yyyymmdd = formatDate(now, "YYYYMMDD");
-    updateMeasuredTime(user.uid, yyyymmdd, newMeasure);
+
+    const tmpMonth = "202112";
+    const updateKey = "times";
+    // TODO arrayRemove()を使えそう？
+    updateMeasuredTime(user.uid, tmpMonth, newMeasure, updateKey);
+  };
+
+  const toggleRange = () => {
+    setRangeOn(!rangeOn);
   };
 
   React.useEffect(() => {
@@ -219,6 +231,14 @@ const MeasuredTimesTable = React.memo(() => {
                     );
                   }
                 }
+                /**
+                 * Todo いつか消すこと！
+                 */
+                selectItems.push(
+                  <MenuItem key={"unde"} value={"undefined"}>
+                    {"undefined"}
+                  </MenuItem>
+                );
                 return selectItems;
               })()}
             </Select>
@@ -332,36 +352,41 @@ const MeasuredTimesTable = React.memo(() => {
           <Button onClick={handleDialogClose}>確定</Button>
         </DialogActions>
       </Dialog>
-      <Button
-        onClick={() => {
-          function compare(a: any, b: any) {
-            if (a.start < b.start) {
-              return -1;
+      <Box display="flex">
+        <Button
+          onClick={() => {
+            function compare(a: any, b: any) {
+              if (a.start < b.start) {
+                return -1;
+              }
+              if (a.start > b.start) {
+                return 1;
+              }
+              return 0;
             }
-            if (a.start > b.start) {
-              return 1;
-            }
-            return 0;
-          }
 
-          const newTimes = [...measure.times];
-          newTimes.sort(compare);
-          console.log(newTimes);
+            const newTimes = [...measure.times];
+            newTimes.sort(compare);
+            console.log(newTimes);
 
-          const newMeasure = {
-            ...measure,
-            times: newTimes,
-          };
+            const newMeasure = {
+              ...measure,
+              times: newTimes,
+            };
 
-          setMeasure(newMeasure);
-          console.log("newMeasure", newMeasure);
-          const now = new Date();
-          const yyyymmdd = formatDate(now, "YYYYMMDD");
-          updateMeasuredTime(user.uid, yyyymmdd, newMeasure);
-        }}
-      >
-        並び替え
-      </Button>
+            setMeasure(newMeasure);
+            console.log("newMeasure", newMeasure);
+
+            const tmpMonth = "202112";
+            const updateKey = "times";
+            updateMeasuredTime(user.uid, tmpMonth, newMeasure, updateKey);
+          }}
+        >
+          並び替え
+        </Button>
+        <div style={{ flexGrow: 1 }} />
+        <Button onClick={toggleRange}>{rangeOn ? "範囲解除" : "範囲指定"}</Button>
+      </Box>
       <TableContainer
         component={Paper}
         sx={{ maxHeight: 440, width: "100%", overflow: "scroll" }}
@@ -380,10 +405,15 @@ const MeasuredTimesTable = React.memo(() => {
           </TableHead>
           <TableBody>
             {measure.times?.map((time: any, index: number) => {
+              const range = {
+                start: new Date("2021/12/12 23:00:00").getTime(),
+                end: new Date("2022/12/15 00:00:00").getTime(),
+              };
+              if (rangeOn && !withinRange(time, range)) return;
               const measuredItem: any = items.find(
                 (item: any) => item["_id"] === time.itemId
               );
-              const measuredSubItem: any = measuredItem.subItems
+              const measuredSubItem: any = measuredItem?.subItems
                 ? measuredItem.subItems.find(
                     (subItem: any) => subItem["_id"] === time.subItemId
                   )

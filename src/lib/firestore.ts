@@ -26,9 +26,6 @@ if (process.env.NEXT_PUBLIC_MODE === "LOCAL_DEVELOP") {
   connectFirestoreEmulator(db, "localhost", 8080);
 }
 
-/**
- * MeasuredItem
- */
 export async function addCollectionTest() {
   // const citiesRef = collection(db, "cities");
 
@@ -92,6 +89,9 @@ export async function addCollectionTest() {
   });
 }
 
+/**
+ * MeasuredItem
+ */
 export async function deleteMeasuredItem(docId: string, removeItem: any) {
   const collectionName = "MeasuredItem";
   const docRef = doc(db, collectionName, docId);
@@ -152,6 +152,7 @@ export async function updateMeasuredItem(docId: string, newItems: any) {
     });
   }
 }
+
 /**
  * MeasuredItem
  *****************************************************
@@ -161,12 +162,12 @@ export async function updateMeasuredItem(docId: string, newItems: any) {
  * MeasuredTime
  */
 export async function fetchMeasuredTime(
+  uid: string,
   docId: string,
   onUpdate: any
-  // where?: any
 ) {
-  const collectionName = "MeasuredTime";
-  const docRef = doc(db, collectionName, docId);
+  const collectionName = "User";
+  const docRef = doc(db, collectionName, uid, "times", docId);
 
   onSnapshot(docRef, async (doc) => {
     if (doc.exists()) {
@@ -180,27 +181,28 @@ export async function fetchMeasuredTime(
   });
 }
 export async function updateMeasuredTime(
-  docId: string,
-  key: string,
-  data: any
+  uid: string,
+  month: string,
+  data: {
+    measuringItem: any;
+    times?: any;
+  },
+  key?: "measuringItem" | "times"
 ) {
-  // console.log(data);
-  const collectionName = "MeasuredTime";
-  const docRef = doc(db, collectionName, docId);
+  const collectionName = "User";
+  const docRef = doc(db, collectionName, uid, "times", month);
+
   const docSnap = await getDoc(docRef);
   if (docSnap.exists()) {
-    // console.log("hello----0");
-    // TODO:差分だけ更新するようにしたい
-    const res = await updateDoc(docRef, {
-      [key]: data,
-    });
-    // console.log("res----");
-    console.log(res);
+    if (key) {
+      await updateDoc(docRef, {
+        [key]: data[key],
+      });
+    } else {
+      await updateDoc(docRef, data);
+    }
   } else {
-    // console.log("hello----1");
-    const res = await setDoc(docRef, { [key]: data });
-    // console.log("res----");
-    console.log(res);
+    await setDoc(docRef, data);
   }
 }
 /**

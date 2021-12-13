@@ -147,13 +147,10 @@ export default function Index() {
         },
       };
       setMeasure(newMeasure);
-      return;
     }
     if (e.target.name === "startTimeHours") {
-      return;
     }
     if (e.target.name === "startTimeMinutes") {
-      return;
     }
     if (e.target.name === "measuredItemMemo") {
       newMeasure = {
@@ -161,12 +158,14 @@ export default function Index() {
         measuringItem: { ...measure.measuringItem, memo: e.target.value },
       };
       setMeasure(newMeasure);
-      return;
     }
 
-    const now = new Date();
-    const yyyymmdd = formatDate(now, "YYYYMMDD");
-    updateMeasuredTime(user.uid, yyyymmdd, newMeasure);
+    // const now = new Date();
+    // const yyyymmdd = formatDate(now, "YYYYMMDD");
+
+    const tmpMonth = "202112";
+    const updateKey = "measuringItem";
+    updateMeasuredTime(user.uid, tmpMonth, newMeasure, updateKey);
   };
   const deleteMeasuringItem = () => {
     setMeasure({
@@ -235,6 +234,7 @@ export default function Index() {
     };
     if (user) init();
   }, [measure.times]);
+
   React.useEffect(() => {
     console.log(measureHistory);
   }, [measureHistory]);
@@ -243,19 +243,26 @@ export default function Index() {
    * times初期化系
    */
   const renderMeasuredTimesTable = (response: any): void => {
-    const today = formatDate(new Date(), "YYYYMMDD");
+    // const today = formatDate(new Date(), "YYYYMMDD");
     // const today = formatDate(new Date(), "2021/12/08 00:11:11");
+    console.log(response);
     setMeasureHistory(response);
-    if (today in response) {
-      console.log(today);
-      setMeasure(response[today]);
-    } else {
-      setMeasure({ ...measure, times: [] });
-    }
+    setMeasure(response);
+    // if (response.times) {
+    // } else {
+    //   setMeasure(response);
+    // }
+    // if (today in response) {
+    //   console.log(today);
+    //   setMeasure(response[today]);
+    // } else {
+    //   setMeasure({ ...measure, times: [] });
+    // }
   };
   React.useEffect(() => {
+    const tmpMonth = "202112";
     const init = async () => {
-      await fetchMeasuredTime(user.uid, renderMeasuredTimesTable);
+      await fetchMeasuredTime(user.uid, tmpMonth, renderMeasuredTimesTable);
     };
     if (user) init();
   }, [user]);

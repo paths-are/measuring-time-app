@@ -20,7 +20,10 @@ import {
   deleteMeasuredItem,
   updateMeasuredTime,
 } from "@/src/lib/firestore";
-import { formatDate, orgFloor } from "@/src/lib/utils";
+import {
+  // formatDate,
+  orgFloor,
+} from "@/src/lib/utils";
 import { useRecoilValue, useRecoilState } from "recoil";
 import {
   measuredItems,
@@ -235,7 +238,11 @@ const MeasuredItems = () => {
 
       newMeasure = { ...measure, measuringItem: measuringItem };
       setMeasure(newMeasure);
-      // } else if (!measure.measuringItem.subItemId) {
+
+      const tmpMonth = "202112";
+      const updateKey = "measuringItem";
+      console.log("newMeasure", newMeasure);
+      updateMeasuredTime(user.uid, tmpMonth, newMeasure, updateKey);
     } else {
       // アイテムクリック時（計測されている状態） // サブアイテムが計測されていないとき
       if (
@@ -268,12 +275,11 @@ const MeasuredItems = () => {
         };
         setMeasure(newMeasure);
       }
-    }
 
-    console.log("newMeasure", newMeasure);
-    const now = new Date();
-    const yyyymmdd = formatDate(now, "YYYYMMDD");
-    updateMeasuredTime(user.uid, yyyymmdd, newMeasure);
+      const tmpMonth = "202112";
+      console.log("newMeasure", newMeasure);
+      updateMeasuredTime(user.uid, tmpMonth, newMeasure);
+    }
   };
 
   /**
