@@ -16,6 +16,7 @@ import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 import LogoutIcon from "@mui/icons-material/Logout";
 import IconButton from "@mui/material/IconButton";
+import { withinRange } from "@/src/lib/utils";
 
 import { useUser, login, logout } from "@/src/lib/auth";
 import {
@@ -32,11 +33,16 @@ import {
   totalTimes as totalTimesAtom,
   measure as measureAtom,
   measureHistory as measureHistoryAtom,
+  fixedHeight as fixedHeightAtom,
 } from "@/src/recoilAtoms";
 import { useRecoilValue, useRecoilState, useSetRecoilState } from "recoil";
 import SwipeableViews from "react-swipeable-views";
 import { useTheme } from "@mui/material/styles";
 import { Scrollbar } from "react-scrollbars-custom";
+
+import LocalizationProvider from "@mui/lab/LocalizationProvider";
+import DesktopTimePicker from "@mui/lab/DesktopTimePicker";
+import DateAdapterMoment from "@mui/lab/AdapterMoment";
 
 const pad = (n: number) => (n > 9 ? String(n) : "0" + n);
 
@@ -45,12 +51,12 @@ interface TabPanelProps {
   dir?: string;
   index: number;
   value: number;
-  fixedHeight: number;
 }
 
 function TabPanel(props: TabPanelProps) {
-  const { children, value, index, fixedHeight, ...other } = props;
+  const { children, value, index, ...other } = props;
   const paddingBottom = 32;
+  const fixedHeight = useRecoilValue(fixedHeightAtom);
 
   return (
     <div
@@ -99,7 +105,7 @@ export default function Index() {
   const setTotalTimes = useSetRecoilState(totalTimesAtom);
 
   const fixedIds = ["app-header", "top-container", "tab-container"];
-  const [fixedHeight, setFixedHeight] = React.useState(0);
+  const setFixedHeight = useSetRecoilState(fixedHeightAtom);
 
   const [editDialog, setEditDialog] = React.useState(false);
 
@@ -148,10 +154,6 @@ export default function Index() {
       };
       setMeasure(newMeasure);
     }
-    if (e.target.name === "startTimeHours") {
-    }
-    if (e.target.name === "startTimeMinutes") {
-    }
     if (e.target.name === "measuredItemMemo") {
       newMeasure = {
         ...measure,
@@ -160,13 +162,27 @@ export default function Index() {
       setMeasure(newMeasure);
     }
 
-    // const now = new Date();
-    // const yyyymmdd = formatDate(now, "YYYYMMDD");
+    const tmpMonth = "202112";
+    const updateKey = "measuringItem";
+    updateMeasuredTime(user.uid, tmpMonth, newMeasure, updateKey);
+  };
+  const handleChangeMeasuringItemStartTime = (newValue: any) => {
+    console.log(newValue._d.getTime());
+    let newMeasure: any = {};
+    newMeasure = {
+      ...measure,
+      measuringItem: {
+        ...measure.measuringItem,
+        start: newValue._d.getTime(),
+      },
+    };
+    setMeasure(newMeasure);
 
     const tmpMonth = "202112";
     const updateKey = "measuringItem";
     updateMeasuredTime(user.uid, tmpMonth, newMeasure, updateKey);
   };
+
   const deleteMeasuringItem = () => {
     setMeasure({
       ...measure,
@@ -208,9 +224,17 @@ export default function Index() {
   }, [user]);
 
   React.useEffect(() => {
-    const init = async () => {
+    const calculateTotalTimes = async (range?: any) => {
       let totalTimes: any = {};
       measure.times?.map((time: any) => {
+        if (range) {
+          const result: any = withinRange(time, range, "AND");
+          if (!result.start && result.end) {
+            time = { ...time, start: new Date(time.start).setHours(24, 0, 0) };
+          }
+          if (!result.start && !result.end) return;
+        }
+
         const duration = (time.end - time.start) / 1000;
         const _id = time["itemId"];
         const subItemId = time["subItemId"] || null;
@@ -229,10 +253,18 @@ export default function Index() {
         totalTimes[_id].sum = totalTimes[_id].sum
           ? totalTimes[_id].sum + duration
           : duration;
+        totalTimes.sum = totalTimes.sum ? totalTimes.sum + duration : duration;
       });
       setTotalTimes(totalTimes);
+      console.log(totalTimes);
     };
-    if (user) init();
+
+    const range = {
+      start: new Date().setHours(0, 0, 0),
+      end: new Date().setHours(24, 0, 0),
+    };
+    console.log(range);
+    if (user) calculateTotalTimes(range);
   }, [measure.times]);
 
   React.useEffect(() => {
@@ -243,22 +275,11 @@ export default function Index() {
    * times初期化系
    */
   const renderMeasuredTimesTable = (response: any): void => {
-    // const today = formatDate(new Date(), "YYYYMMDD");
-    // const today = formatDate(new Date(), "2021/12/08 00:11:11");
     console.log(response);
     setMeasureHistory(response);
     setMeasure(response);
-    // if (response.times) {
-    // } else {
-    //   setMeasure(response);
-    // }
-    // if (today in response) {
-    //   console.log(today);
-    //   setMeasure(response[today]);
-    // } else {
-    //   setMeasure({ ...measure, times: [] });
-    // }
   };
+
   React.useEffect(() => {
     const tmpMonth = "202112";
     const init = async () => {
@@ -301,49 +322,20 @@ export default function Index() {
                   </Select>
                 </FormControl>
                 <Divider sx={{ my: 1 }} />
-                <Box sx={{ display: "flex", alignItems: "center" }}>
-                  <FormControl variant="standard" sx={{ p: 1 }}>
-                    <InputLabel>時間</InputLabel>
-                    <Select
-                      name="startTimeHours"
-                      value={formatDate(measure.measuringItem?.start, "hh")}
-                      label="時間"
-                      onChange={handleChangeMeasuringItem}
-                    >
-                      {(() => {
-                        const items = [];
-                        for (let i = 0; i < 24; i++) {
-                          items.push(
-                            <MenuItem key={pad(i)} value={pad(i)}>
-                              {pad(i)}
-                            </MenuItem>
-                          );
-                        }
-                        return items;
-                      })()}
-                    </Select>
-                  </FormControl>
-                  <FormControl variant="standard" sx={{ p: 1 }}>
-                    <InputLabel>分</InputLabel>
-                    <Select
-                      name="startTimeMinutes"
-                      value={formatDate(measure.measuringItem?.start, "mm")}
-                      label="分"
-                      onChange={handleChangeMeasuringItem}
-                    >
-                      {(() => {
-                        const items = [];
-                        for (let i = 0; i < 60; i++) {
-                          items.push(
-                            <MenuItem key={pad(i)} value={pad(i)}>
-                              {pad(i)}
-                            </MenuItem>
-                          );
-                        }
-                        return items;
-                      })()}
-                    </Select>
-                  </FormControl>
+                <Box sx={{ py: 1 }}>
+                  <LocalizationProvider
+                    name="startTime"
+                    dateAdapter={DateAdapterMoment as any}
+                  >
+                    <DesktopTimePicker
+                      disableIgnoringDatePartForTimeValidation
+                      maxTime={new Date().getTime()}
+                      label="開始時間"
+                      value={measure.measuringItem?.start}
+                      onChange={handleChangeMeasuringItemStartTime}
+                      renderInput={(params) => <TextField {...params} />}
+                    />
+                  </LocalizationProvider>
                 </Box>
                 <Divider sx={{ my: 1 }} />
                 <TextField
@@ -364,7 +356,7 @@ export default function Index() {
                   削除
                 </Button>
                 <div style={{ flexGrow: 1 }} />
-                <Button onClick={toggleEditDialog}>戻る</Button>
+                <Button onClick={closeEditDialog}>閉じる</Button>
               </DialogActions>
             </Dialog>
 
@@ -384,9 +376,6 @@ export default function Index() {
               >
                 {measure.measuringItem.isActive && (
                   <>
-                    {/* <IconButton onClick={toggleEditDialog}>
-                      <StopCircleOutlinedIcon />
-                    </IconButton> */}
                     <Button
                       variant="text"
                       sx={{ py: 0, flexGrow: 1 }}
@@ -434,28 +423,13 @@ export default function Index() {
                 index={value}
                 onChangeIndex={handleChangeIndex}
               >
-                <TabPanel
-                  value={value}
-                  index={0}
-                  dir={theme.direction}
-                  fixedHeight={fixedHeight}
-                >
+                <TabPanel value={value} index={0} dir={theme.direction}>
                   <MeasuredItems />
                 </TabPanel>
-                <TabPanel
-                  value={value}
-                  index={1}
-                  dir={theme.direction}
-                  fixedHeight={fixedHeight}
-                >
+                <TabPanel value={value} index={1} dir={theme.direction}>
                   <MeasuredTimesTable />
                 </TabPanel>
-                <TabPanel
-                  value={value}
-                  index={2}
-                  dir={theme.direction}
-                  fixedHeight={fixedHeight}
-                >
+                <TabPanel value={value} index={2} dir={theme.direction}>
                   <Calendar />
                 </TabPanel>
               </SwipeableViews>

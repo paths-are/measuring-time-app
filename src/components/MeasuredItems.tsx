@@ -23,6 +23,7 @@ import {
 import {
   // formatDate,
   orgFloor,
+  getDisplayTime,
 } from "@/src/lib/utils";
 import { useRecoilValue, useRecoilState } from "recoil";
 import {
@@ -520,10 +521,10 @@ const MeasuredItems = () => {
         const baseTime = 60 * 5; // 1日5時間同じ事やってればすごいということで。（なんとなく）
         const totalTime = totalTimes[_id]?.sum
           ? orgFloor(totalTimes[_id]?.sum / 60, 2)
-          : 0;
+          : 0; // そのアイテムに関する合計時間
         const totalTimeItem = totalTimes[_id]?.[_id]
           ? orgFloor(totalTimes[_id]?.[_id] / 60, 2)
-          : 0;
+          : 0; // そのアイテムだけの合計時間
         const rate = (totalTimeItem / baseTime) * 100;
         const isActive =
           measure.measuringItem?.["_id"] === _id &&
@@ -565,8 +566,10 @@ const MeasuredItems = () => {
                   {item.name}
                   <span style={{ flexGrow: 1 }}></span>
                   {totalTimeItem === totalTime
-                    ? `${totalTime}分`
-                    : `${totalTimeItem}分/${totalTime}分`}
+                    ? getDisplayTime(totalTime)
+                    : `${getDisplayTime(totalTimeItem)}/${getDisplayTime(
+                        totalTime
+                      )}`}
                 </Button>
                 {!editMode && (
                   <IconButton
@@ -630,7 +633,7 @@ const MeasuredItems = () => {
                         >
                           {subItem.name}
                           <span style={{ flexGrow: 1 }}></span>
-                          {totalTimeSubItem}分
+                          {getDisplayTime(totalTimeSubItem)}
                         </Button>
                         {/* 同じ幅を保つために同じエレメントを非表示で作成。 */}
                         <IconButton sx={{ visibility: "hidden" }}>
@@ -643,6 +646,16 @@ const MeasuredItems = () => {
             </Grid>
           );
       })}
+      <Grid container sx={{ mb: 1, display: "flex", alignItems: "center" }}>
+        <Grid item xs={12} sx={{ display: "flex" }}>
+          <div style={{ flexGrow: 1 }}></div>
+          {getDisplayTime(totalTimes.sum / 60)}
+          {/* 同じ幅を保つために同じエレメントを非表示で作成。 */}
+          <IconButton sx={{ visibility: "hidden" }}>
+            <ExpandMoreOutlinedIcon />
+          </IconButton>
+        </Grid>
+      </Grid>
     </>
   );
 };

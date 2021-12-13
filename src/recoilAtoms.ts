@@ -42,3 +42,8 @@ export const measureHistory = atom<any>({
     },
   ],
 });
+
+export const fixedHeight = atom<number>({
+  key: "fixedHeight",
+  default: 0,
+});

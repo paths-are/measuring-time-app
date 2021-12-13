@@ -8,7 +8,11 @@ import TableHead from "@mui/material/TableHead";
 import TableRow from "@mui/material/TableRow";
 import Paper from "@mui/material/Paper";
 import { useRecoilValue, useRecoilState } from "recoil";
-import { measuredItems, measure as measureAtom } from "@/src/recoilAtoms";
+import {
+  measuredItems,
+  measure as measureAtom,
+  fixedHeight as fixedHeightAtom,
+} from "@/src/recoilAtoms";
 import { updateMeasuredTime } from "@/src/lib/firestore";
 import { useUser } from "@/src/lib/auth";
 import { withinRange } from "@/src/lib/utils";
@@ -31,6 +35,7 @@ const MeasuredTimesTable = React.memo(() => {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const [selectedTime, setSelectedTime] = React.useState<any | null>(null);
   const [rangeOn, setRangeOn] = React.useState(true);
+  const fixedHeight = useRecoilValue(fixedHeightAtom);
 
   const handleMemoChange = (event: any) => {
     setSelectedTime({
@@ -352,6 +357,7 @@ const MeasuredTimesTable = React.memo(() => {
           <Button onClick={handleDialogClose}>確定</Button>
         </DialogActions>
       </Dialog>
+
       <Box display="flex">
         <Button
           onClick={() => {
@@ -385,11 +391,30 @@ const MeasuredTimesTable = React.memo(() => {
           並び替え
         </Button>
         <div style={{ flexGrow: 1 }} />
-        <Button onClick={toggleRange}>{rangeOn ? "範囲解除" : "範囲指定"}</Button>
+        <Button onClick={toggleRange}>
+          {rangeOn ? "範囲解除" : "範囲指定"}
+        </Button>
       </Box>
+
       <TableContainer
         component={Paper}
-        sx={{ maxHeight: 440, width: "100%", overflow: "scroll" }}
+        sx={{
+          width: "100%",
+          overflowX: "scroll",
+          height: `calc(100vh - ${fixedHeight}px - 32px)`,
+          maxHeight: `calc(100vh - ${fixedHeight} - 32px)`,
+          "::-webkit-scrollbar": {
+            backgroundImage: "linear-gradient(180deg, #D0368A 0%, #708AD4 99%)",
+            boxShadow: "inset 2px 2px 5px 0 rgba(#fff, 0.5)",
+            borderRadius: "100px",
+            width: "10px",
+            height: "0px",
+          },
+          "::-webkit-scrollbar-thumb": {
+            backgroundColor: "#35affbde",
+            borderRadius: "100px",
+          },
+        }}
       >
         <Table stickyHeader aria-label="simple table">
           <TableHead>
@@ -409,7 +434,7 @@ const MeasuredTimesTable = React.memo(() => {
                 start: new Date("2021/12/12 23:00:00").getTime(),
                 end: new Date("2022/12/15 00:00:00").getTime(),
               };
-              if (rangeOn && !withinRange(time, range)) return;
+              if (rangeOn && !withinRange(time, range, "OR")) return;
               const measuredItem: any = items.find(
                 (item: any) => item["_id"] === time.itemId
               );
