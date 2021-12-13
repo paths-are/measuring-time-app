@@ -32,7 +32,26 @@ export function orgFloor(value: number, base: number) {
   return Math.floor(value * base) / base;
 }
 
-export function withinRange(time: any, range: any) {
+/**
+ * 1時間以上なら 「〇時間〇〇分」
+ * 1時間未満なら「○○分」と返却
+ */
+export function getDisplayTime(minutes: number) {
+  console.log(minutes)
+  if (minutes >= 60) {
+    const hour = orgFloor(minutes / 60, 1);
+    const minutesAmari = orgFloor(minutes % (hour * 60), 1);
+    return `${hour}時間${minutesAmari}分`;
+  } else {
+    return `${minutes}分`;
+  }
+}
+
+export function withinRange(
+  time: any,
+  range: any,
+  condition: "AND" | "OR" | "OR_SPECIAL"
+) {
   // const range = {
   //   start: new Date("2021/12/01 00:00:00").getTime(),
   //   end: new Date("2022/01/01 00:00:00").getTime(),
@@ -41,13 +60,41 @@ export function withinRange(time: any, range: any) {
   // const start = formatDate(time.start, "YYYY/MM/DD hh:mm:ss");
   // const end = formatDate(time.end, "YYYY/MM/DD hh:mm:ss");
 
-  if (
-    (time.start >= range.start && time.start < range.end) ||
-    (time.end >= range.start && time.end < range.end)
-    // スタートかエンドが範囲内であれば
-  ) {
-    return true;
-  } else {
-    return false;
+  if (condition === "OR") {
+    if (
+      (time.start >= range.start && time.start < range.end) ||
+      (time.end >= range.start && time.end < range.end)
+      // スタートかエンドが範囲内であれば
+    ) {
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  if (condition === "AND") {
+    if (
+      time.start >= range.start &&
+      time.start < range.end &&
+      time.end >= range.start &&
+      time.end < range.end
+      // スタート、エンドの両方が範囲内であれば
+    ) {
+      return { start: true, end: true };
+    } else if (
+      time.start < range.start &&
+      time.end >= range.start &&
+      time.end < range.end
+    ) {
+      return { start: false, end: true };
+    } else if (
+      time.start >= range.start &&
+      time.start < range.end &&
+      time.end >= range.end
+    ) {
+      return { start: true, end: false };
+    } else {
+      return { start: false, end: false };
+    }
   }
 }

@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "private": true,
   "dependencies": {
+    "@date-io/moment": "^2.11.0",
     "@devexpress/dx-react-core": "^2.7.6",
     "@devexpress/dx-react-scheduler": "^2.7.6",
     "@devexpress/dx-react-scheduler-material-ui": "^2.7.6",
@@ -11,10 +12,12 @@
     "@emotion/server": "latest",
     "@emotion/styled": "latest",
     "@mui/icons-material": "^5.2.0",
+    "@mui/lab": "^5.0.0-alpha.59",
     "@mui/material": "latest",
     "@mui/system": "^5.2.3",
     "clsx": "latest",
     "firebase": "^9.5.0",
+    "moment": "^2.29.1",
     "next": "latest",
     "next-pwa": "^5.4.4",
     "react": "latest",
@@ -26,7 +29,7 @@
   },
   "config": {
     "pid": "timer-app-d0e7e",
-    "firestoreOutDir": "20211213_0100",
+    "firestoreOutDir": "20211213_1923",
     "_firestoreOutDir": "20211130_1017"
   },
   "scripts": {
