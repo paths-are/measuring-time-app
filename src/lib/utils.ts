@@ -31,3 +31,23 @@ export function formatDate(dateobject: Date | number, format: string) {
 export function orgFloor(value: number, base: number) {
   return Math.floor(value * base) / base;
 }
+
+export function withinRange(time: any, range: any) {
+  // const range = {
+  //   start: new Date("2021/12/01 00:00:00").getTime(),
+  //   end: new Date("2022/01/01 00:00:00").getTime(),
+  // };
+  // const scopedTimes = [];
+  // const start = formatDate(time.start, "YYYY/MM/DD hh:mm:ss");
+  // const end = formatDate(time.end, "YYYY/MM/DD hh:mm:ss");
+
+  if (
+    (time.start >= range.start && time.start < range.end) ||
+    (time.end >= range.start && time.end < range.end)
+    // スタートかエンドが範囲内であれば
+  ) {
+    return true;
+  } else {
+    return false;
+  }
+}

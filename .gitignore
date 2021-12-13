@@ -28,8 +28,10 @@ tools/exports/
 .gitignore
 tools/node_modules/
 tools/serviceAccountKey.json
+tools/creates/
 02_Timer-App.gsheet - ショートカット.lnk
 
 # PWA
 public/sw.js
 public/workbox-1846d813.js
+tools/command.md
