@@ -8,7 +8,6 @@ import Tab from "@mui/material/Tab";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
-import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
@@ -139,17 +138,37 @@ export default function Index() {
     let newMeasure: any = {};
 
     if (e.target.name === "measuredItem") {
-      const result: any = items.find(
-        (item: any) => item["_id"] === e.target.value
-      );
+      const itemId = e.target.value;
+
+      const result: any = items.find((item: any) => item["_id"] === itemId);
+
       newMeasure = {
         ...measure,
         measuringItem: {
           ...measure.measuringItem,
-          _id: e.target.value,
-          name: result.name,
+          _id: itemId,
+          name: result?.name || null,
           subItemId: null,
           subItemName: null,
+        },
+      };
+      setMeasure(newMeasure);
+    }
+    if (e.target.name === "measuredSubItem") {
+      const itemId = measure.measuringItem._id;
+      const subItemId = e.target.value;
+
+      const result: any = items.find((item: any) => item["_id"] === itemId);
+      const subResult: any = result.subItems.find(
+        (item: any) => item["_id"] === subItemId
+      );
+
+      newMeasure = {
+        ...measure,
+        measuringItem: {
+          ...measure.measuringItem,
+          subItemId: subItemId,
+          subItemName: subResult.name,
         },
       };
       setMeasure(newMeasure);
@@ -228,7 +247,7 @@ export default function Index() {
       let totalTimes: any = {};
       measure.times?.map((time: any) => {
         if (range) {
-          const result: any = withinRange(time, range, "AND");
+          const result: any = withinRange(time, range, "AND_OR");
           if (!result.start && result.end) {
             time = { ...time, start: new Date(time.start).setHours(24, 0, 0) };
           }
@@ -295,9 +314,8 @@ export default function Index() {
           <>
             {/* 計測中のアイテム変更ダイアログ */}
             <Dialog open={editDialog} onClose={closeEditDialog}>
-              <DialogTitle>項目の編集</DialogTitle>
+              <DialogTitle>計測中アイテムを編集しよう！</DialogTitle>
               <DialogContent>
-                <DialogContentText>アイテムを編集しよう！</DialogContentText>
                 <FormControl variant="standard" sx={{ p: 1 }} fullWidth>
                   <InputLabel>アイテム</InputLabel>
                   <Select
@@ -313,6 +331,32 @@ export default function Index() {
                           selectItems.push(
                             <MenuItem key={pad(i)} value={items[i]._id}>
                               {items[i].name}
+                            </MenuItem>
+                          );
+                        }
+                      }
+                      return selectItems;
+                    })()}
+                  </Select>
+                </FormControl>
+                <FormControl variant="standard" sx={{ p: 1 }} fullWidth>
+                  <InputLabel>サブアイテム</InputLabel>
+                  <Select
+                    name="measuredSubItem"
+                    value={measure.measuringItem?.subItemId}
+                    label="サブアイテム"
+                    onChange={handleChangeMeasuringItem}
+                  >
+                    {(() => {
+                      const selectItems = [];
+                      const result: any = items.find(
+                        (item: any) => item["_id"] === measure.measuringItem._id
+                      );
+                      if (result?.subItems) {
+                        for (const subItem of result.subItems) {
+                          selectItems.push(
+                            <MenuItem key={subItem._id} value={subItem._id}>
+                              {` -- ${subItem.name}`}
                             </MenuItem>
                           );
                         }
@@ -345,8 +389,8 @@ export default function Index() {
                   name="measuredItemMemo"
                   multiline
                   rows={2}
+                  variant="filled"
                   fullWidth
-                  variant="standard"
                   value={measure.measuringItem?.memo}
                   onChange={handleChangeMeasuringItem}
                 />

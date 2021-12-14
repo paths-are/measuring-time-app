@@ -15,6 +15,8 @@ export function formatDate(dateobject: Date | number, format: string) {
   if (format === "hh") return `${hours}`;
   if (format === "mm") return `${minutes}`;
   if (format === "YYYYMMDD") return `${year}${month}${date}`;
+  if (format === "YYYY年MM月DD日") return `${year}年${month}月${date}日`;
+  if (format === "MM月DD日") return `${month}月${date}日`;
   if (format === "YYYY/MM/DD hh:mm:ss")
     // return `${year}/${month}/${date} ${hours}:${minutes}:${secounds}`;
     return `${year}/${month}/${date} ${hours}:${minutes}:00`;
@@ -37,7 +39,6 @@ export function orgFloor(value: number, base: number) {
  * 1時間未満なら「○○分」と返却
  */
 export function getDisplayTime(minutes: number) {
-  console.log(minutes)
   if (minutes >= 60) {
     const hour = orgFloor(minutes / 60, 1);
     const minutesAmari = orgFloor(minutes % (hour * 60), 1);
@@ -50,7 +51,7 @@ export function getDisplayTime(minutes: number) {
 export function withinRange(
   time: any,
   range: any,
-  condition: "AND" | "OR" | "OR_SPECIAL"
+  condition: "AND" | "OR" | "AND_OR"
 ) {
   // const range = {
   //   start: new Date("2021/12/01 00:00:00").getTime(),
@@ -72,7 +73,7 @@ export function withinRange(
     }
   }
 
-  if (condition === "AND") {
+  if (condition === "AND_OR") {
     if (
       time.start >= range.start &&
       time.start < range.end &&
