@@ -20,11 +20,15 @@ import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogTitle from "@mui/material/DialogTitle";
-import { Box, Button, Typography, Divider, TextField } from "@mui/material";
+import { Box, Button, Divider, TextField } from "@mui/material";
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
-import Select, { SelectChangeEvent } from "@mui/material/Select";
+import Select from "@mui/material/Select";
+
+import LocalizationProvider from "@mui/lab/LocalizationProvider";
+import DateAdapterMoment from "@mui/lab/AdapterMoment";
+import MobileDateTimePicker from "@mui/lab/MobileDateTimePicker";
 
 const pad = (n: number) => (n > 9 ? String(n) : "0" + n);
 
@@ -36,6 +40,7 @@ const MeasuredTimesTable = React.memo(() => {
   const [selectedTime, setSelectedTime] = React.useState<any | null>(null);
   const [rangeOn, setRangeOn] = React.useState(true);
   const fixedHeight = useRecoilValue(fixedHeightAtom);
+  let displayDate = null;
 
   const handleMemoChange = (event: any) => {
     setSelectedTime({
@@ -43,109 +48,28 @@ const MeasuredTimesTable = React.memo(() => {
       memo: event.target.value,
     });
   };
+
   const handleChangeItem = (event: any) => {
-    setSelectedTime({
-      ...selectedTime,
-      itemId: event.target.value,
-    });
+    if (event.target.name === "measuredItem") {
+      setSelectedTime({
+        ...selectedTime,
+        itemId: event.target.value,
+      });
+    }
+    if (event.target.name === "measuredSubItem") {
+      setSelectedTime({
+        ...selectedTime,
+        subItemId: event.target.value,
+      });
+    }
   };
 
-  const handleChange = (event: SelectChangeEvent) => {
-    const newTimes = [...measure.times];
-
-    let newTimeObject: any = {};
-
-    if (event.target.name === "startTimeHours") {
-      // 開始の時間を変更
-      const baseTime = new Date(selectedTime.start).getTime();
-      const baseHours = new Date(selectedTime.start).getHours();
-      const newHours = event.target.value;
-      const diff = baseHours - Number(newHours);
-      const newTime = new Date(baseTime - diff * 3600000 /* 1時間 */).getTime();
-
-      newTimeObject = {
-        ...selectedTime,
-        start: newTime,
-        startHh: formatDate(newTime, "hh"),
-      };
-      setSelectedTime({
-        ...selectedTime,
-        start: newTime,
-        startHh: formatDate(newTime, "hh"),
-      });
-    }
-    if (event.target.name === "startTimeMinutes") {
-      // 開始の分を変更
-      const baseTime = new Date(selectedTime.start).getTime();
-      const baseMinutes = new Date(selectedTime.start).getMinutes();
-      const newMinutes = event.target.value;
-      const diff = baseMinutes - Number(newMinutes);
-      const newTime = new Date(baseTime - diff * 60000 /* 1分 */).getTime();
-
-      newTimeObject = {
-        ...selectedTime,
-        start: newTime,
-        startMm: formatDate(newTime, "mm"),
-      };
-      setSelectedTime({
-        ...selectedTime,
-        start: newTime,
-        startMm: formatDate(newTime, "mm"),
-      });
-    }
-    if (event.target.name === "endTimeHours") {
-      // 終了の時間を変更
-      const baseTime = new Date(selectedTime.end).getTime();
-      const baseHours = new Date(selectedTime.end).getHours();
-      const newHours = event.target.value;
-      const diff = baseHours - Number(newHours);
-      const newTime = new Date(baseTime - diff * 3600000 /* 1時間 */).getTime();
-
-      newTimeObject = {
-        ...selectedTime,
-        end: newTime,
-        endHh: formatDate(newTime, "hh"),
-      };
-      setSelectedTime({
-        ...selectedTime,
-        end: newTime,
-        endHh: formatDate(newTime, "hh"),
-      });
-    }
-    if (event.target.name === "endTimeMinutes") {
-      // 終了の分を変更
-      const baseTime = new Date(selectedTime.end).getTime();
-      const baseMinutes = new Date(selectedTime.end).getMinutes();
-      const newMinutes = event.target.value;
-      const diff = baseMinutes - Number(newMinutes);
-      const newTime = new Date(baseTime - diff * 60000 /* 1分 */).getTime();
-
-      newTimeObject = {
-        ...selectedTime,
-        end: newTime,
-        endMm: formatDate(newTime, "mm"),
-      };
-      setSelectedTime({
-        ...selectedTime,
-        end: newTime,
-        endMm: formatDate(newTime, "mm"),
-      });
-    }
-    let obj = newTimes.find((x: any) => x["_id"] === newTimeObject["_id"]);
-    let index = newTimes.indexOf(obj);
-    newTimes.splice(index, 1, newTimeObject);
-
-    const newMeasure = {
-      ...measure,
-      times: newTimes,
+  const handleChangeTime = (newTime: any) => {
+    const newTimeObject = {
+      ...selectedTime,
+      start: new Date(newTime).getTime(),
     };
-
-    setMeasure(newMeasure);
-    console.log("newMeasure", newMeasure);
-
-    const tmpMonth = "202112";
-    const updateKey = "times";
-    updateMeasuredTime(user.uid, tmpMonth, newMeasure, updateKey);
+    setSelectedTime(newTimeObject);
   };
 
   const handleClickDialogOpen = (time: any) => {
@@ -209,11 +133,12 @@ const MeasuredTimesTable = React.memo(() => {
   };
 
   React.useEffect(() => {
-    console.log(selectedTime);
+    // console.log(selectedTime);
   }, [selectedTime]);
 
   return (
     <>
+      {/* Time 編集Dialog */}
       <Dialog open={dialogOpen} onClose={handleDialogClose}>
         <DialogTitle>アクション</DialogTitle>
         <DialogContent>
@@ -249,93 +174,53 @@ const MeasuredTimesTable = React.memo(() => {
             </Select>
           </FormControl>
           <Divider sx={{ my: 1 }} />
-          <Box sx={{ display: "flex", alignItems: "center" }}>
-            <FormControl variant="standard" sx={{ p: 1 }}>
-              <InputLabel>時間</InputLabel>
-              <Select
-                name="startTimeHours"
-                value={selectedTime?.startHh}
-                label="時間"
-                onChange={handleChange}
-              >
-                {(() => {
-                  const items = [];
-                  for (let i = 0; i < 24; i++) {
-                    items.push(
-                      <MenuItem key={pad(i)} value={pad(i)}>
-                        {pad(i)}
+          <FormControl variant="standard" sx={{ p: 1 }} fullWidth>
+            <InputLabel>サブアイテム</InputLabel>
+            <Select
+              name="measuredSubItem"
+              value={selectedTime?.subItemId}
+              label="サブアイテム"
+              onChange={handleChangeItem}
+            >
+              {(() => {
+                const selectItems = [];
+                const result: any = items.find(
+                  (item: any) => item["_id"] === selectedTime?.itemId
+                );
+                if (result?.subItems) {
+                  for (const subItem of result.subItems) {
+                    selectItems.push(
+                      <MenuItem key={subItem._id} value={subItem._id}>
+                        {` -- ${subItem.name}`}
                       </MenuItem>
                     );
                   }
-                  return items;
-                })()}
-              </Select>
-            </FormControl>
-            <FormControl variant="standard" sx={{ p: 1 }}>
-              <InputLabel>分</InputLabel>
-              <Select
-                name="startTimeMinutes"
-                value={selectedTime?.startMm}
-                label="分"
-                onChange={handleChange}
-              >
-                {(() => {
-                  const items = [];
-                  for (let i = 0; i < 60; i++) {
-                    items.push(
-                      <MenuItem key={pad(i)} value={pad(i)}>
-                        {pad(i)}
-                      </MenuItem>
-                    );
-                  }
-                  return items;
-                })()}
-              </Select>
-            </FormControl>
-            <Typography>-</Typography>
-            <FormControl variant="standard" sx={{ p: 1 }}>
-              <InputLabel>時間</InputLabel>
-              <Select
-                name="endTimeHours"
-                value={selectedTime?.endHh}
-                label="時間"
-                onChange={handleChange}
-              >
-                {(() => {
-                  const items = [];
-                  for (let i = 0; i < 24; i++) {
-                    items.push(
-                      <MenuItem key={pad(i)} value={pad(i)}>
-                        {pad(i)}
-                      </MenuItem>
-                    );
-                  }
-                  return items;
-                })()}
-              </Select>
-            </FormControl>
-            <FormControl variant="standard" sx={{ p: 1 }}>
-              <InputLabel>分</InputLabel>
-              <Select
-                name="endTimeMinutes"
-                value={selectedTime?.endMm}
-                label="分"
-                onChange={handleChange}
-              >
-                {(() => {
-                  const items = [];
-                  for (let i = 0; i < 60; i++) {
-                    items.push(
-                      <MenuItem key={pad(i)} value={pad(i)}>
-                        {pad(i)}
-                      </MenuItem>
-                    );
-                  }
-                  return items;
-                })()}
-              </Select>
-            </FormControl>
-          </Box>
+                }
+                return selectItems;
+              })()}
+            </Select>
+          </FormControl>
+          <Divider sx={{ my: 1 }} />
+
+          <LocalizationProvider dateAdapter={DateAdapterMoment as any}>
+            <MobileDateTimePicker
+              // maxTime={new Date().getTime()}
+              openTo="minutes"
+              value={selectedTime?.start}
+              onChange={handleChangeTime}
+              renderInput={(params) => <TextField {...params} />}
+            />
+          </LocalizationProvider>
+          <Divider sx={{ my: 1 }} />
+          <LocalizationProvider dateAdapter={DateAdapterMoment as any}>
+            <MobileDateTimePicker
+              // maxTime={new Date().getTime()}
+              openTo="minutes"
+              value={selectedTime?.end}
+              onChange={handleChangeTime}
+              renderInput={(params) => <TextField {...params} />}
+            />
+          </LocalizationProvider>
           <Divider sx={{ my: 1 }} />
           <TextField
             margin="dense"
@@ -431,10 +316,18 @@ const MeasuredTimesTable = React.memo(() => {
           <TableBody>
             {measure.times?.map((time: any, index: number) => {
               const range = {
-                start: new Date("2021/12/12 23:00:00").getTime(),
-                end: new Date("2022/12/15 00:00:00").getTime(),
+                start: new Date(new Date().setHours(0, 0, 0)).getTime(),
+                end: new Date(new Date().setHours(24, 0, 0)).getTime(),
               };
-              if (rangeOn && !withinRange(time, range, "OR")) return;
+              const result: any = withinRange(time, range, "AND_OR");
+              if (!result.start && result.end) {
+                time = {
+                  ...time,
+                  start: new Date(time.start).setHours(24, 0, 0),
+                };
+              }
+              if (rangeOn && !result.start && !result.end) return;
+              // if (rangeOn && !withinRange(time, range, "AND_OR")) return;
               const measuredItem: any = items.find(
                 (item: any) => item["_id"] === time.itemId
               );
@@ -443,33 +336,61 @@ const MeasuredTimesTable = React.memo(() => {
                     (subItem: any) => subItem["_id"] === time.subItemId
                   )
                 : null;
+              displayDate = formatDate(time.start, "YYYYMMDD");
+              let beforeTime = index !== 0 ? measure.times[index - 1] : 0;
+              let beforeDate = formatDate(beforeTime.start, "YYYYMMDD");
               return (
-                <TableRow
-                  key={index}
-                  sx={{
-                    "&:last-child td, &:last-child th": { border: 0 },
-                    ":hover": {
-                      backgroundColor: "yellow",
-                    },
-                  }}
-                  onClick={() => handleClickDialogOpen(time)}
-                >
-                  <TableCell align="left">{index}</TableCell>
-                  <TableCell component="th" scope="row">
-                    {measuredItem?.name}
-                  </TableCell>
-                  <TableCell align="left">{measuredSubItem?.name}</TableCell>
-                  <TableCell align="left">{time?.memo}</TableCell>
-                  <TableCell align="right">
-                    {formatDate(time.start, "hh:mm")}
-                  </TableCell>
-                  <TableCell align="right">
-                    {formatDate(time.end, "hh:mm")}
-                  </TableCell>
-                  <TableCell align="right">
-                    {orgFloor((time.end - time.start) / 1000 / 60, 2)}
-                  </TableCell>
-                </TableRow>
+                <>
+                  {displayDate !== beforeDate && (
+                    <TableRow
+                      key={index}
+                      sx={{
+                        backgroundColor: "gray",
+                        "&:last-child td, &:last-child th": { border: 0 },
+                        ":hover": {
+                          backgroundColor: "gray",
+                        },
+                      }}
+                      onClick={() => handleClickDialogOpen(time)}
+                    >
+                      <TableCell align="left">{index}</TableCell>
+                      <TableCell component="th" scope="row">
+                        {formatDate(time.start, "MM月DD日")}
+                      </TableCell>
+                      <TableCell align="left"></TableCell>
+                      <TableCell align="left"></TableCell>
+                      <TableCell align="right"></TableCell>
+                      <TableCell align="right"></TableCell>
+                      <TableCell align="right"></TableCell>
+                    </TableRow>
+                  )}
+                  <TableRow
+                    key={index}
+                    sx={{
+                      "&:last-child td, &:last-child th": { border: 0 },
+                      ":hover": {
+                        backgroundColor: "gray",
+                      },
+                    }}
+                    onClick={() => handleClickDialogOpen(time)}
+                  >
+                    <TableCell align="left">{index}</TableCell>
+                    <TableCell component="th" scope="row">
+                      {measuredItem?.name}
+                    </TableCell>
+                    <TableCell align="left">{measuredSubItem?.name}</TableCell>
+                    <TableCell align="left">{time?.memo}</TableCell>
+                    <TableCell align="right">
+                      {formatDate(time.start, "hh:mm")}
+                    </TableCell>
+                    <TableCell align="right">
+                      {formatDate(time.end, "hh:mm")}
+                    </TableCell>
+                    <TableCell align="right">
+                      {orgFloor((time.end - time.start) / 1000 / 60, 2)}
+                    </TableCell>
+                  </TableRow>
+                </>
               );
             })}
           </TableBody>

@@ -2,7 +2,7 @@ import { atom } from "recoil";
 
 export const measuredItems = atom<any>({
   key: "measuredItems",
-  default: null,
+  default: [],
 });
 export const totalTimes = atom<any>({
   key: "totalTimes",
