@@ -308,7 +308,7 @@ export default function Index() {
   }, [user]);
 
   return (
-    <Container maxWidth="sm" sx={{ pb: 4 }}>
+    <Container maxWidth="md" sx={{ pb: 4 }}>
       <div>
         {user !== null ? (
           <>
