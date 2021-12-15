@@ -64,10 +64,18 @@ const MeasuredTimesTable = React.memo(() => {
     }
   };
 
-  const handleChangeTime = (newTime: any) => {
+  const handleChangeTimeStart = (newTime: any) => {
     const newTimeObject = {
       ...selectedTime,
       start: new Date(newTime).getTime(),
+    };
+    setSelectedTime(newTimeObject);
+  };
+  
+  const handleChangeTimeEnd = (newTime: any) => {
+    const newTimeObject = {
+      ...selectedTime,
+      end: new Date(newTime).getTime(),
     };
     setSelectedTime(newTimeObject);
   };
@@ -207,7 +215,7 @@ const MeasuredTimesTable = React.memo(() => {
               // maxTime={new Date().getTime()}
               openTo="minutes"
               value={selectedTime?.start}
-              onChange={handleChangeTime}
+              onChange={handleChangeTimeStart}
               renderInput={(params) => <TextField {...params} />}
             />
           </LocalizationProvider>
@@ -217,7 +225,7 @@ const MeasuredTimesTable = React.memo(() => {
               // maxTime={new Date().getTime()}
               openTo="minutes"
               value={selectedTime?.end}
-              onChange={handleChangeTime}
+              onChange={handleChangeTimeEnd}
               renderInput={(params) => <TextField {...params} />}
             />
           </LocalizationProvider>
