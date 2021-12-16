@@ -27,6 +27,7 @@ import { formatDate } from "@/src/lib/utils";
 import MeasuredItems from "@/src/components/MeasuredItems";
 import MeasuredTimesTable from "@/src/components/MeasuredTimesTable";
 import Calendar from "@/src/components/Calendar";
+import ChartComponent from "@/src/components/Chart";
 import {
   measuredItems,
   totalTimes as totalTimesAtom,
@@ -456,10 +457,14 @@ export default function Index() {
                   value={value}
                   onChange={handleChange}
                   aria-label="basic tabs example"
+                  variant="scrollable"
+                  scrollButtons
+                  allowScrollButtonsMobile
                 >
                   <Tab label="Measure" {...a11yProps(0)} />
                   <Tab label="History" {...a11yProps(1)} />
                   <Tab label="Calendar" {...a11yProps(2)} />
+                  <Tab label="Chart" {...a11yProps(3)} />
                 </Tabs>
               </Box>
               <SwipeableViews
@@ -475,6 +480,10 @@ export default function Index() {
                 </TabPanel>
                 <TabPanel value={value} index={2} dir={theme.direction}>
                   <Calendar />
+                </TabPanel>
+                <TabPanel value={value} index={3} dir={theme.direction}>
+                  <ChartComponent />
+                  {/* <div>Element</div> */}
                 </TabPanel>
               </SwipeableViews>
             </Box>

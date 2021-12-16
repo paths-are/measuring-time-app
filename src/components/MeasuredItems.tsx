@@ -23,7 +23,7 @@ import {
 import {
   // formatDate,
   orgFloor,
-  getDisplayTime,
+  minutesToHoursDisplay,
 } from "@/src/lib/utils";
 import { useRecoilValue, useRecoilState } from "recoil";
 import {
@@ -566,8 +566,8 @@ const MeasuredItems = () => {
                   {item.name}
                   <span style={{ flexGrow: 1 }}></span>
                   {totalTimeItem === totalTime
-                    ? getDisplayTime(totalTime)
-                    : `${getDisplayTime(totalTimeItem)}/${getDisplayTime(
+                    ? minutesToHoursDisplay(totalTime)
+                    : `${minutesToHoursDisplay(totalTimeItem)}/${minutesToHoursDisplay(
                         totalTime
                       )}`}
                 </Button>
@@ -633,7 +633,7 @@ const MeasuredItems = () => {
                         >
                           {subItem.name}
                           <span style={{ flexGrow: 1 }}></span>
-                          {getDisplayTime(totalTimeSubItem)}
+                          {minutesToHoursDisplay(totalTimeSubItem)}
                         </Button>
                         {/* 同じ幅を保つために同じエレメントを非表示で作成。 */}
                         <IconButton sx={{ visibility: "hidden" }}>
@@ -649,7 +649,7 @@ const MeasuredItems = () => {
       <Grid container sx={{ mb: 1, display: "flex", alignItems: "center" }}>
         <Grid item xs={12} sx={{ display: "flex" }}>
           <div style={{ flexGrow: 1 }}></div>
-          {getDisplayTime(totalTimes.sum / 60)}
+          {minutesToHoursDisplay(totalTimes.sum / 60)}
           {/* 同じ幅を保つために同じエレメントを非表示で作成。 */}
           <IconButton sx={{ visibility: "hidden" }}>
             <ExpandMoreOutlinedIcon />
