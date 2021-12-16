@@ -38,13 +38,26 @@ export function orgFloor(value: number, base: number) {
  * 1時間以上なら 「〇時間〇〇分」
  * 1時間未満なら「○○分」と返却
  */
-export function getDisplayTime(minutes: number) {
+export function minutesToHoursDisplay(minutes: number) {
   if (minutes >= 60) {
     const hour = orgFloor(minutes / 60, 1);
     const minutesAmari = orgFloor(minutes % (hour * 60), 1);
     return `${hour}時間${minutesAmari}分`;
   } else {
     return `${minutes}分`;
+  }
+}
+
+/**
+ */
+export function minutesToHours(minutes: number) {
+  if (minutes >= 60) {
+    const hour = orgFloor(minutes / 60, 1);
+    const minutesAmari = orgFloor(minutes % (hour * 60), 1);
+    console.log(minutes, hour + minutesAmari / 6 / 10);
+    return hour + minutesAmari / 6 / 10;
+  } else {
+    return minutes / 6 / 10;
   }
 }
 

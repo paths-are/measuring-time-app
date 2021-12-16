@@ -6,7 +6,7 @@ import "react-big-calendar/lib/css/react-big-calendar.css";
 
 const localizer = momentLocalizer(moment);
 
-const MyCalendar = () => {
+const CalendarView = () => {
   const measure = useRecoilValue(measureAtom);
   const items = useRecoilValue(measuredItems);
   return (
@@ -37,4 +37,4 @@ const MyCalendar = () => {
   );
 };
 
-export default MyCalendar;
+export default CalendarView;
