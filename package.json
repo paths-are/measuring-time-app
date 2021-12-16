@@ -4,9 +4,6 @@
   "private": true,
   "dependencies": {
     "@date-io/moment": "^2.11.0",
-    "@devexpress/dx-react-core": "^2.7.6",
-    "@devexpress/dx-react-scheduler": "^2.7.6",
-    "@devexpress/dx-react-scheduler-material-ui": "^2.7.6",
     "@emotion/cache": "latest",
     "@emotion/react": "latest",
     "@emotion/server": "latest",
@@ -21,6 +18,7 @@
     "next": "latest",
     "next-pwa": "^5.4.4",
     "react": "latest",
+    "react-big-calendar": "^0.38.1",
     "react-dom": "latest",
     "react-scrollbars-custom": "^4.0.27",
     "react-swipeable-views": "^0.14.0",
@@ -29,7 +27,7 @@
   },
   "config": {
     "pid": "timer-app-d0e7e",
-    "firestoreOutDir": "20211213_1923",
+    "firestoreOutDir": "20211216_1413",
     "_firestoreOutDir": "20211130_1017"
   },
   "scripts": {
@@ -53,6 +51,7 @@
   "devDependencies": {
     "@types/node": "latest",
     "@types/react": "latest",
+    "@types/react-big-calendar": "^0.36.2",
     "@types/react-dom": "latest",
     "@types/react-swipeable-views": "^0.13.1",
     "@types/uuid": "^8.3.3",
