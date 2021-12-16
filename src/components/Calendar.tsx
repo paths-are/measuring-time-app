@@ -1,36 +1,40 @@
-import Paper from "@material-ui/core/Paper";
-import { ViewState } from "@devexpress/dx-react-scheduler";
-import {
-  Scheduler,
-  DayView,
-  Appointments,
-} from "@devexpress/dx-react-scheduler-material-ui";
 import { useRecoilValue } from "recoil";
 import { measure as measureAtom, measuredItems } from "@/src/recoilAtoms";
+import { Calendar, momentLocalizer } from "react-big-calendar";
+import moment from "moment";
+import "react-big-calendar/lib/css/react-big-calendar.css";
 
-const MeasuredItems = () => {
+const localizer = momentLocalizer(moment);
+
+const MyCalendar = () => {
   const measure = useRecoilValue(measureAtom);
   const items = useRecoilValue(measuredItems);
-
   return (
-    <Paper>
-      <Scheduler
-        data={measure.times.map((time: any) => {
-          const result: any = items.find(
+    <div>
+      <Calendar
+        localizer={localizer}
+        events={measure.times.map((time: any) => {
+          const item: any = items.find(
             (item: any) => item["_id"] === time.itemId
           );
+
+          const subItem: any = time.subItemId
+            ? item.subItems.find(
+                (subItem: any) => subItem["_id"] === time.subItemId
+              )
+            : null;
           return {
-            startDate: time.start,
-            endDate: time.end,
-            title: result?.name,
+            start: new Date(time.start),
+            end: new Date(time.end),
+            title: subItem ? subItem.name : item?.name,
           };
         })}
-      >
-        <ViewState />
-        <DayView />
-        <Appointments />
-      </Scheduler>
-    </Paper>
+        startAccessor="start"
+        endAccessor="end"
+        style={{ height: 500 }}
+      />
+    </div>
   );
 };
-export default MeasuredItems;
+
+export default MyCalendar;
