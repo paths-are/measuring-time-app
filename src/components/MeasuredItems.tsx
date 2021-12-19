@@ -1,6 +1,6 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
-import { Button, TextField, Grid } from "@mui/material";
+import { Button, TextField, Grid, Typography } from "@mui/material";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -8,9 +8,14 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import DescriptionIcon from "@mui/icons-material/Description";
-import FileOpenOutlinedIcon from "@mui/icons-material/FileOpenOutlined";
 import ExpandMoreOutlinedIcon from "@mui/icons-material/ExpandMoreOutlined";
-import ExpandLessOutlinedIcon from "@mui/icons-material/ExpandLessOutlined";
+import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
+import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
+import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
+import AddTaskOutlinedIcon from "@mui/icons-material/AddTaskOutlined";
+import PlayCircleOutlinedIcon from "@mui/icons-material/PlayCircleOutlined";
+import { formatDate } from "@/src/lib/utils";
+import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 
 import { v4 as uuidv4 } from "uuid";
 import { useUser } from "@/src/lib/auth";
@@ -37,6 +42,11 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 
+import LocalizationProvider from "@mui/lab/LocalizationProvider";
+import DateAdapterMoment from "@mui/lab/AdapterMoment";
+import DatePicker from "@mui/lab/DatePicker";
+import Slider from "@mui/material/Slider";
+
 function createNewTime(measuringItem: any) {
   let newTime: any = {};
   newTime = {
@@ -48,6 +58,7 @@ function createNewTime(measuringItem: any) {
   measuringItem.subItemId
     ? (newTime.subItemId = measuringItem.subItemId)
     : null;
+  measuringItem.todoId ? (newTime.todoId = measuringItem.todoId) : null;
   measuringItem.memo ? (newTime.memo = measuringItem.memo) : null;
   return newTime;
 }
@@ -65,7 +76,31 @@ const MeasuredItems = () => {
   const totalTimes = useRecoilValue(totalTimesAtom);
   const [editMode, setEditMode] = React.useState(false);
   const [noteEditDialog, setNoteEditDialog] = React.useState(false);
-  // const [note, setNote] = React.useState(null);
+  const [addTodoDialog, setAddTodoDialog] = React.useState(false);
+  type todo = {
+    itemId?: string;
+    subItemId?: string | null;
+    _id: string;
+    description: string | null;
+    estimatedTime: number | null;
+    unit: "MINUTES" | "HOURS" | "PERSON_DAY";
+    status: "NOT_STARTED" | "IN_PROGRESS" | "FINISHED";
+    dueDate: Date | null;
+    finishedDate: Date | null;
+  };
+  const newTodoDefaultValues: todo = {
+    itemId: "",
+    subItemId: "",
+    _id: "",
+    description: null,
+    estimatedTime: 5,
+    unit: "MINUTES",
+    status: "NOT_STARTED",
+    dueDate: null,
+    finishedDate: null,
+  };
+  const [newTodo, setNewTodo] = React.useState<todo>(newTodoDefaultValues);
+  const [editTodoDialog, setEditTodoDialog] = React.useState(false);
 
   const colorList = [
     "#3f51b5",
@@ -78,6 +113,166 @@ const MeasuredItems = () => {
   ];
 
   /**
+   * 新規Todo追加
+   */
+  const openAddTodoDialog = (itemId: string, subItemId: string = "") => {
+    setAddTodoDialog(true);
+    setNewTodo({
+      ...newTodo,
+      itemId: itemId,
+      subItemId: subItemId,
+    });
+  };
+  const closeAddTodoDialog = () => {
+    setAddTodoDialog(false);
+    setNewTodo(newTodoDefaultValues);
+  };
+  const changeTodoTimeUnit = (e: any): void => {
+    const newUnit = e.target.value;
+    if (!newUnit) return;
+    setNewTodo({
+      ...newTodo,
+      unit: newUnit,
+      estimatedTime: 0,
+    });
+  };
+  const todoTimeConfig = (
+    unit: "MINUTES" | "HOURS" | "PERSON_DAY",
+    config: "min" | "max" | "step"
+  ) => {
+    if (unit === "MINUTES") {
+      if (config === "min") return 0;
+      if (config === "max") return 60;
+      if (config === "step") return 5;
+    }
+    if (unit === "HOURS") {
+      if (config === "min") return 0;
+      if (config === "max") return 10;
+      if (config === "step") return 0.5;
+    }
+    if (unit === "PERSON_DAY") {
+      if (config === "min") return 0;
+      if (config === "max") return 30;
+      if (config === "step") return 0.5;
+    }
+  };
+  const timeSliderValue = (value: number | null) => {
+    if (value === null) return 0;
+    return value;
+  };
+  const handleChangeNewTodo = (event: any) => {
+    const newDescription = event.target?.value;
+    setNewTodo({
+      ...newTodo,
+      description: newDescription,
+    });
+  };
+  const handleChangeNewTodoTimeSlider = (
+    event: Event,
+    value: number | Array<number>
+  ) => {
+    if (!event) return;
+    if (Array.isArray(value)) return;
+    setNewTodo({
+      ...newTodo,
+      estimatedTime: value,
+    });
+  };
+  const handleClickAddNewTodoButton = () => {
+    console.log("newTodo", newTodo);
+    console.log(items);
+    const item: any = items.find((item: any) => item["_id"] === newTodo.itemId);
+    const newItem = { ...item };
+    const newItems = [...items];
+    let obj = newItems.find((x: any) => x["_id"] === newTodo.itemId);
+    let index = newItems.indexOf(obj);
+    const newTodoObj = {
+      _id: `todo_${uuidv4()}`,
+      description: newTodo.description,
+      estimatedTime: newTodo.estimatedTime,
+      unit: newTodo.unit,
+      status: newTodo.status,
+      dueDate:
+        newTodo.dueDate !== null ? new Date(newTodo.dueDate).getTime() : null,
+    };
+    console.log("newTodoObj", newTodoObj);
+    const newTodos = item.todos ? [...item.todos, newTodoObj] : [newTodoObj];
+    newItem.todos = newTodos;
+    newItems.splice(index, 1, newItem);
+
+    updateMeasuredItem(user.uid, newItems);
+    setNewTodo(newTodoDefaultValues);
+
+    // if (newTodo.subItemId) {
+    //   const subItem: any = item.subItems.find(
+    //     (item: any) => item["_id"] === newTodo.subItemId
+    //   );
+    // }
+    closeAddTodoDialog();
+  };
+  // const formatDueDate = (dueDate: Date | null) => {
+  // };
+
+  /**
+   * Edit Todo
+   */
+  const opeEditTodoDialog = ({
+    itemId,
+    subItemId,
+    todo,
+  }: {
+    itemId: string;
+    subItemId?: string;
+    todo: todo;
+  }) => {
+    setEditTodoDialog(true);
+    setNewTodo({
+      ...todo,
+      itemId: itemId,
+      subItemId: subItemId ? subItemId : null,
+    });
+  };
+  const closeEditTodoDialog = () => {
+    setEditTodoDialog(false);
+    setNewTodo(newTodoDefaultValues);
+  };
+  const handleClickUpdateTodoButton = () => {
+    const item: any = items.find((item: any) => item["_id"] === newTodo.itemId);
+    const newItem = { ...item };
+    const newItems = [...items];
+    let obj = newItems.find((x: any) => x["_id"] === newTodo.itemId);
+    let index = newItems.indexOf(obj);
+    const newTodoObj = {
+      _id: newTodo._id,
+      description: newTodo.description,
+      estimatedTime: newTodo.estimatedTime,
+      unit: newTodo.unit,
+      status: newTodo.status,
+      dueDate:
+        newTodo.dueDate !== null ? new Date(newTodo.dueDate).getTime() : null,
+      finishedDate: null,
+    };
+    const newTodos = [...item.todos];
+    const todo: any = newTodos.find(
+      (todo: todo) => todo["_id"] === newTodo._id
+    );
+    let todoIndex = newTodos.indexOf(todo);
+    newTodos.splice(todoIndex, 1, newTodoObj);
+    newItem.todos = newTodos;
+    newItems.splice(index, 1, newItem);
+
+    updateMeasuredItem(user.uid, newItems);
+    setNewTodo(newTodoDefaultValues);
+
+    // if (newTodo.subItemId) {
+    //   const subItem: any = item.subItems.find(
+    //     (item: any) => item["_id"] === newTodo.subItemId
+    //   );
+    // }
+    closeEditTodoDialog();
+  };
+
+  /**
    * 新規アイテム追加
    */
   const openNewDialog = () => {
@@ -85,6 +280,9 @@ const MeasuredItems = () => {
   };
   const closeNewDialog = () => {
     setNewDialog(false);
+  };
+  const handleOnChange = (e: any): void => {
+    setNewItem(e.target.value);
   };
   const handleSendItem = () => {
     closeNewDialog();
@@ -95,9 +293,6 @@ const MeasuredItems = () => {
       color: "#3f51b5",
     });
     setNewItem("");
-  };
-  const handleOnChange = (e: any): void => {
-    setNewItem(e.target.value);
   };
 
   /**
@@ -200,11 +395,27 @@ const MeasuredItems = () => {
    * 計測アイテムがクリックされたときの処理
    * @param _id
    */
-  const handleClickItem = (_id: string, subItemId?: string): void => {
+  const handleClickItem = ({
+    itemId,
+    subItemId,
+    todoId,
+  }: {
+    itemId: string;
+    subItemId?: string | null;
+    todoId?: string | null;
+  }): void => {
+    if (todoId) console.log(todoId);
     console.log("subItemId", subItemId);
-    const clickedItem: any = items.find((item: any) => item["_id"] === _id);
+    if (subItemId === undefined) subItemId = null;
+    if (todoId === undefined) todoId = null;
+    const clickedItem: any = items.find((item: any) => item["_id"] === itemId);
     const clickedSubItem: any = subItemId
       ? clickedItem.subItems.find((item: any) => item["_id"] === subItemId)
+      : null;
+    const clickedTodo: any = todoId
+      ? subItemId
+        ? clickedSubItem.todos.find((todo: any) => todo["_id"] === todoId)
+        : clickedItem.todos.find((todo: any) => todo["_id"] === todoId)
       : null;
     const measuringItem: any = {};
 
@@ -212,14 +423,23 @@ const MeasuredItems = () => {
     function startMeasuringItem(): void {
       measuringItem.isActive = true;
 
-      measuringItem["_id"] = _id;
+      measuringItem["_id"] = itemId;
       measuringItem.start = new Date().getTime();
       measuringItem.name = clickedItem.name;
 
       if (subItemId) {
         measuringItem.subItemId = subItemId;
         measuringItem.subItemName = clickedSubItem.name;
+      } else {
+        measuringItem.subItemId = null;
       }
+      if (todoId) {
+        measuringItem.todoId = todoId;
+        measuringItem.todoDescription = clickedTodo.description;
+      } else {
+        measuringItem.todoId = null;
+      }
+      console.log(measuringItem);
     }
     // ストップ
     function stopMeasuringItem(): void {
@@ -228,7 +448,8 @@ const MeasuredItems = () => {
       measuringItem["_id"] = null;
       measuringItem.start = null;
       measuringItem.name = null;
-      measuringItem.subItemId ? (measuringItem.subItemId = null) : null;
+      measuringItem.subItemId = null;
+      measuringItem.todoId = null;
     }
 
     let newMeasure: any = {};
@@ -245,12 +466,14 @@ const MeasuredItems = () => {
       console.log("newMeasure", newMeasure);
       updateMeasuredTime(user.uid, tmpMonth, newMeasure, updateKey);
     } else {
-      // アイテムクリック時（計測されている状態） // サブアイテムが計測されていないとき
+      // アイテムクリック時（計測されている状態）
       if (
-        measure.measuringItem?.["_id"] === _id &&
-        measure.measuringItem?.["subItemId"] === subItemId
+        measure.measuringItem?.["_id"] === itemId &&
+        measure.measuringItem?.["subItemId"] === subItemId &&
+        measure.measuringItem?.["todoId"] === todoId
       ) {
         // 同じアイテムをクリックして停止するとき
+        console.log("A");
         stopMeasuringItem();
 
         const newTime = createNewTime(measure.measuringItem);
@@ -260,12 +483,13 @@ const MeasuredItems = () => {
           times: [...measure.times, newTime],
         };
         setMeasure(newMeasure);
-      }
-      if (
-        measure.measuringItem?.["_id"] !== _id ||
-        measure.measuringItem?.["subItemId"] !== subItemId
+      } else if (
+        measure.measuringItem?.["_id"] !== itemId ||
+        measure.measuringItem?.["subItemId"] !== subItemId ||
+        measure.measuringItem?.["todoId"] !== todoId
       ) {
         // 　別のアイテムをクリックして違うアイテムの計測を開始するとき
+        console.log("B");
         startMeasuringItem();
 
         const newTime = createNewTime(measure.measuringItem);
@@ -275,6 +499,9 @@ const MeasuredItems = () => {
           times: [...measure.times, newTime],
         };
         setMeasure(newMeasure);
+      } else {
+        console.log("C");
+        console.log("measure.measuringItem", measure.measuringItem);
       }
 
       const tmpMonth = "202112";
@@ -316,6 +543,192 @@ const MeasuredItems = () => {
   };
   return (
     <>
+      {/* Todo追加フォーム */}
+      <Dialog open={addTodoDialog} onClose={closeAddTodoDialog} fullWidth>
+        <DialogTitle>Todoの追加</DialogTitle>
+        <DialogContent>
+          <DialogContentText>Todoアイテムを追加しよう！！</DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            name="newTodoDescription"
+            label="タイトル"
+            type="text"
+            fullWidth
+            variant="standard"
+            value={newTodo.description}
+            onChange={handleChangeNewTodo}
+            required
+          />
+          <Box sx={{ py: 1 }}>
+            <LocalizationProvider
+              name="startTime"
+              dateAdapter={DateAdapterMoment as any}
+            >
+              <DatePicker
+                // minDate={new Date().getTime()} // TODO 設定する 2021/12/19
+                label="期日"
+                value={newTodo.dueDate}
+                onChange={(value) => {
+                  setNewTodo({
+                    ...newTodo,
+                    dueDate: value,
+                  });
+                }}
+                renderInput={(params) => <TextField {...params} />}
+              />
+            </LocalizationProvider>
+          </Box>
+          このタスクにおける見積時間
+          <Box sx={{ py: 1 }} display="flex" alignItems="center">
+            <FormControl variant="standard" sx={{ p: 1, width: 50 }}>
+              <TextField
+                type="text"
+                variant="standard"
+                value={newTodo.estimatedTime}
+                disabled
+              />
+            </FormControl>
+            <FormControl variant="standard" sx={{ p: 1 }}>
+              <Select
+                name="unit"
+                value={newTodo?.unit}
+                onChange={changeTodoTimeUnit}
+              >
+                {(() => {
+                  const todoUnits: {
+                    [key: string]: string;
+                  } = {
+                    MINUTES: "分",
+                    HOURS: "時間",
+                    PERSON_DAY: "人日",
+                  };
+                  const menuItems: any = [];
+                  Object.keys(todoUnits).forEach((key) => {
+                    menuItems.push(
+                      <MenuItem key={key} value={key}>
+                        {todoUnits[key]}
+                      </MenuItem>
+                    );
+                  });
+                  return menuItems;
+                })()}
+              </Select>
+            </FormControl>
+          </Box>
+          <Box sx={{ py: 1 }}>
+            時間
+            <Slider
+              aria-label="todoTime"
+              onChange={handleChangeNewTodoTimeSlider}
+              value={timeSliderValue(newTodo.estimatedTime)}
+              step={todoTimeConfig(newTodo.unit, "step")}
+              min={todoTimeConfig(newTodo.unit, "min")}
+              max={todoTimeConfig(newTodo.unit, "max")}
+              marks
+              valueLabelDisplay="auto"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeAddTodoDialog}>戻る</Button>
+          <Button onClick={handleClickAddNewTodoButton}>追加</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Todo編集フォーム */}
+      <Dialog open={editTodoDialog} onClose={closeEditTodoDialog} fullWidth>
+        <DialogTitle>Todoの編集</DialogTitle>
+        <DialogContent>
+          <DialogContentText>Todoアイテムを編集しよう！！</DialogContentText>
+          <TextField
+            margin="dense"
+            name="editTodoDescription"
+            label="タイトル"
+            type="text"
+            fullWidth
+            variant="standard"
+            value={newTodo?.description}
+            onChange={handleChangeNewTodo}
+            required
+          />
+          <Box sx={{ py: 1 }}>
+            <LocalizationProvider
+              name="startTime"
+              dateAdapter={DateAdapterMoment as any}
+            >
+              <DatePicker
+                // minDate={new Date().getTime()} // TODO 設定する 2021/12/19
+                label="期日"
+                value={newTodo?.dueDate}
+                onChange={(value) => {
+                  if (value)
+                    setNewTodo({
+                      ...newTodo,
+                      dueDate: value,
+                    });
+                }}
+                renderInput={(params) => <TextField {...params} />}
+              />
+            </LocalizationProvider>
+          </Box>
+          このタスクにおける見積時間
+          <Box sx={{ py: 1 }} display="flex" alignItems="center">
+            <FormControl variant="standard" sx={{ p: 1, width: 50 }}>
+              <TextField
+                type="text"
+                variant="standard"
+                value={newTodo?.estimatedTime}
+                disabled
+              />
+            </FormControl>
+            <FormControl variant="standard" sx={{ p: 1 }}>
+              <Select
+                name="unit"
+                value={newTodo?.unit}
+                onChange={changeTodoTimeUnit}
+              >
+                {(() => {
+                  const todoUnits: {
+                    [key: string]: string;
+                  } = {
+                    MINUTES: "分",
+                    HOURS: "時間",
+                    PERSON_DAY: "人日",
+                  };
+                  const menuItems: any = [];
+                  Object.keys(todoUnits).forEach((key) => {
+                    menuItems.push(
+                      <MenuItem key={key} value={key}>
+                        {todoUnits[key]}
+                      </MenuItem>
+                    );
+                  });
+                  return menuItems;
+                })()}
+              </Select>
+            </FormControl>
+          </Box>
+          <Box sx={{ py: 1 }}>
+            時間
+            <Slider
+              aria-label="todoTime"
+              onChange={handleChangeNewTodoTimeSlider}
+              value={timeSliderValue(newTodo.estimatedTime)}
+              step={todoTimeConfig(newTodo.unit, "step")}
+              min={todoTimeConfig(newTodo.unit, "min")}
+              max={todoTimeConfig(newTodo.unit, "max")}
+              marks
+              valueLabelDisplay="auto"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={closeEditTodoDialog}>戻る</Button>
+          <Button onClick={handleClickUpdateTodoButton}>更新</Button>
+        </DialogActions>
+      </Dialog>
+
       {/* 項目追加フォーム */}
       <Dialog open={newDialog} onClose={closeNewDialog} fullWidth>
         <DialogTitle>項目の追加</DialogTitle>
@@ -516,6 +929,8 @@ const MeasuredItems = () => {
           </Box>
         </>
       )}
+
+      {/* アイテム一覧表示 */}
       {items?.map((item: any, index: number) => {
         const _id = item["_id"];
         const baseTime = 60 * 5; // 1日5時間同じ事やってればすごいということで。（なんとなく）
@@ -537,18 +952,33 @@ const MeasuredItems = () => {
             <Grid
               container
               key={index}
-              sx={{ mb: 1, display: "flex", alignItems: "center" }}
+              sx={{
+                mb: 1,
+                display: "flex",
+                justifyContent: "right",
+              }}
             >
-              <Grid item xs={editMode ? 12 : 12} sx={{ display: "flex" }}>
+              <Grid item xs={12} sx={{ display: "flex" }}>
                 <IconButton onClick={() => handleClickEmptyNote(item)}>
-                  {item.note ? <DescriptionIcon /> : <FileOpenOutlinedIcon />}
+                  {item.note ? (
+                    <DescriptionIcon />
+                  ) : (
+                    <InsertDriveFileOutlinedIcon />
+                  )}
+                </IconButton>
+                <IconButton
+                  onClick={() => {
+                    openAddTodoDialog(item._id);
+                  }}
+                >
+                  <AddTaskOutlinedIcon />
                 </IconButton>
                 <Button
                   variant={isActive ? "outlined" : "contained"}
                   onClick={
                     editMode
                       ? () => handleClickEditIcon(item)
-                      : () => handleClickItem(_id)
+                      : () => handleClickItem({ itemId: _id })
                   }
                   sx={{
                     flexGrow: 1,
@@ -567,25 +997,108 @@ const MeasuredItems = () => {
                   <span style={{ flexGrow: 1 }}></span>
                   {totalTimeItem === totalTime
                     ? minutesToHoursDisplay(totalTime)
-                    : `${minutesToHoursDisplay(totalTimeItem)}/${minutesToHoursDisplay(
-                        totalTime
-                      )}`}
+                    : `${minutesToHoursDisplay(
+                        totalTimeItem
+                      )}/${minutesToHoursDisplay(totalTime)}`}
+
+                  {/* <IconButton size="small">
+                    <MoreVertIcon />
+                  </IconButton> */}
                 </Button>
                 {!editMode && (
                   <IconButton
                     onClick={() => {
                       onClickExpandSubItems(_id);
                     }}
-                    sx={{ visibility: item.subItems ? null : "hidden" }}
+                    sx={{
+                      // TODO たぶん、item.todosを変更する必要がある
+                      visibility: item.subItems || item.todos ? null : "hidden",
+                    }}
                   >
                     {item.expandSubItems ? (
-                      <ExpandLessOutlinedIcon />
+                      <CloseOutlinedIcon fontSize="small" />
                     ) : (
-                      <ExpandMoreOutlinedIcon />
+                      <ExpandMoreOutlinedIcon fontSize="small" />
                     )}
                   </IconButton>
                 )}
               </Grid>
+
+              {/* Todo表示 */}
+              {!editMode &&
+                item.expandSubItems &&
+                item.todos?.map((todo: any, index: number) => {
+                  return (
+                    <Grid
+                      container
+                      key={index}
+                      sx={{
+                        my: 1,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "right",
+                      }}
+                    >
+                      <Grid
+                        item
+                        xs={10}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          mb: 1,
+                        }}
+                      >
+                        <IconButton>
+                          <CircleOutlinedIcon />
+                        </IconButton>
+                        <Button
+                          variant="text"
+                          sx={{ flexGrow: 1 }}
+                          onClick={() => {
+                            opeEditTodoDialog({ itemId: item._id, todo });
+                          }}
+                        >
+                          <Typography
+                            textAlign="left"
+                            sx={{
+                              flexGrow: 1,
+                              color:
+                                measure.measuringItem.todoId === todo._id
+                                  ? "red"
+                                  : "",
+                            }}
+                          >
+                            {todo.description}
+                          </Typography>
+                          {todo.estimatedTime && (
+                            <Typography textAlign="right">
+                              {todo.estimatedTime}分
+                            </Typography>
+                          )}
+                          {todo.dueDate && (
+                            <Typography textAlign="right" sx={{ pl: 1 }}>
+                              {formatDate(todo.dueDate, "M/D")}
+                            </Typography>
+                          )}
+                        </Button>
+                        <IconButton
+                          onClick={() =>
+                            handleClickItem({
+                              itemId: item._id,
+                              todoId: todo._id,
+                            })
+                          }
+                        >
+                          <PlayCircleOutlinedIcon />
+                        </IconButton>
+                        {/* 同じ幅を保つために同じエレメントを非表示で作成。 */}
+                        <IconButton sx={{ visibility: "hidden" }}>
+                          <ExpandMoreOutlinedIcon />
+                        </IconButton>
+                      </Grid>
+                    </Grid>
+                  );
+                })}
               {!editMode &&
                 item.expandSubItems &&
                 item.subItems?.map((subItem: any, index: number) => {
@@ -608,13 +1121,22 @@ const MeasuredItems = () => {
                       }}
                     >
                       <Grid item xs={10} sx={{ display: "flex" }}>
+                        <IconButton
+                          onClick={() => {
+                            openAddTodoDialog(item._id, subItemId);
+                          }}
+                        >
+                          <CheckCircleOutlineIcon />
+                        </IconButton>
                         <Button
                           variant={
                             measure.measuringItem?.["subItemId"] === subItemId
                               ? "outlined"
                               : "contained"
                           }
-                          onClick={() => handleClickItem(_id, subItemId)}
+                          onClick={() =>
+                            handleClickItem({ itemId: _id, subItemId })
+                          }
                           sx={{
                             flexGrow: 1,
                             mr: 1,

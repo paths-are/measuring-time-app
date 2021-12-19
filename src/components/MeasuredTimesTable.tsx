@@ -71,7 +71,7 @@ const MeasuredTimesTable = React.memo(() => {
     };
     setSelectedTime(newTimeObject);
   };
-  
+
   const handleChangeTimeEnd = (newTime: any) => {
     const newTimeObject = {
       ...selectedTime,
@@ -315,6 +315,7 @@ const MeasuredTimesTable = React.memo(() => {
               <TableCell align="left">番号</TableCell>
               <TableCell>項目</TableCell>
               <TableCell align="left">サブ</TableCell>
+              <TableCell align="left">Todo</TableCell>
               <TableCell align="left">memo</TableCell>
               <TableCell align="right">開始</TableCell>
               <TableCell align="right">終了</TableCell>
@@ -344,6 +345,15 @@ const MeasuredTimesTable = React.memo(() => {
                     (subItem: any) => subItem["_id"] === time.subItemId
                   )
                 : null;
+              const measuredTodo: any = time.todoId
+                ? time.subItemId
+                  ? measuredSubItem.todos.find(
+                      (todo: any) => todo["_id"] === time.todoId
+                    )
+                  : measuredItem.todos.find(
+                      (todo: any) => todo["_id"] === time.todoId
+                    )
+                : null;
               displayDate = formatDate(time.start, "YYYYMMDD");
               let beforeTime = index !== 0 ? measure.times[index - 1] : 0;
               let beforeDate = formatDate(beforeTime.start, "YYYYMMDD");
@@ -367,6 +377,7 @@ const MeasuredTimesTable = React.memo(() => {
                       </TableCell>
                       <TableCell align="left"></TableCell>
                       <TableCell align="left"></TableCell>
+                      <TableCell align="left"></TableCell>
                       <TableCell align="right"></TableCell>
                       <TableCell align="right"></TableCell>
                       <TableCell align="right"></TableCell>
@@ -387,6 +398,7 @@ const MeasuredTimesTable = React.memo(() => {
                       {measuredItem?.name}
                     </TableCell>
                     <TableCell align="left">{measuredSubItem?.name}</TableCell>
+                    <TableCell align="left">{measuredTodo?.description}</TableCell>
                     <TableCell align="left">{time?.memo}</TableCell>
                     <TableCell align="right">
                       {formatDate(time.start, "hh:mm")}

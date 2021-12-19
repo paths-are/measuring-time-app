@@ -4,7 +4,7 @@ export function formatDate(dateobject: Date | number, format: string) {
   const pad = (n: number) => (n > 9 ? n : "0" + n);
   dateobject = new Date(dateobject);
   const year = dateobject.getFullYear();
-  const month = pad(dateobject.getMonth() + 1);
+  const month = dateobject.getMonth() + 1;
   const date = pad(dateobject.getDate());
   const hours = pad(dateobject.getHours());
   const minutes = pad(dateobject.getMinutes());
@@ -16,12 +16,13 @@ export function formatDate(dateobject: Date | number, format: string) {
   if (format === "mm") return `${minutes}`;
   if (format === "YYYYMMDD") return `${year}${month}${date}`;
   if (format === "YYYY年MM月DD日") return `${year}年${month}月${date}日`;
-  if (format === "MM月DD日") return `${month}月${date}日`;
+  if (format === "MM月DD日") return `${pad(month)}月${date}日`;
+  if (format === "M/D") return `${month}/${date}`;
   if (format === "YYYY/MM/DD hh:mm:ss")
     // return `${year}/${month}/${date} ${hours}:${minutes}:${secounds}`;
-    return `${year}/${month}/${date} ${hours}:${minutes}:00`;
-  if (format === "YYYY/MM/DD") return `${year}/${month}/${date}`;
-  return `${year}${month}${date}`;
+    return `${year}/${pad(month)}/${date} ${hours}:${minutes}:00`;
+  if (format === "YYYY/MM/DD") return `${year}/${pad(month)}/${date}`;
+  return `${year}${pad(month)}${date}`;
 }
 
 /**
