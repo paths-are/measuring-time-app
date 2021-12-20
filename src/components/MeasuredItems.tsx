@@ -16,6 +16,8 @@ import AddTaskOutlinedIcon from "@mui/icons-material/AddTaskOutlined";
 import PlayCircleOutlinedIcon from "@mui/icons-material/PlayCircleOutlined";
 import { formatDate } from "@/src/lib/utils";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
+import CheckIcon from "@mui/icons-material/Check";
+import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 
 import { v4 as uuidv4 } from "uuid";
 import { useUser } from "@/src/lib/auth";
@@ -93,7 +95,7 @@ const MeasuredItems = () => {
     subItemId: "",
     _id: "",
     description: null,
-    estimatedTime: 5,
+    estimatedTime: 0,
     unit: "MINUTES",
     status: "NOT_STARTED",
     dueDate: null,
@@ -270,6 +272,43 @@ const MeasuredItems = () => {
     //   );
     // }
     closeEditTodoDialog();
+  };
+
+  /**
+   * 操作 Todo
+   */
+  const finishTodo = ({
+    itemId,
+    subItemId,
+    todoId,
+    status,
+  }: {
+    itemId: string;
+    subItemId?: string;
+    todoId: string;
+    status: "IN_PROGRESS" | "FINISHED";
+  }) => {
+    console.log(itemId, subItemId, todoId);
+    const item: any = items.find((item: any) => item["_id"] === itemId);
+    const newItem = { ...item };
+    const newItems = [...items];
+    let obj = newItems.find((x: any) => x["_id"] === itemId);
+    let index = newItems.indexOf(obj);
+
+    const newTodos = [...item.todos];
+    const newTodo: any = newTodos.find((todo: todo) => todo["_id"] === todoId);
+    const newTodoObj = {
+      ...newTodo,
+      status: status,
+      finishedDate: status === "IN_PROGRESS" ? null : new Date().getTime(),
+    };
+    let todoIndex = newTodos.indexOf(newTodo);
+    newTodos.splice(todoIndex, 1, newTodoObj);
+    newItem.todos = newTodos;
+    newItems.splice(index, 1, newItem);
+
+    updateMeasuredItem(user.uid, newItems);
+    setNewTodo(newTodoDefaultValues);
   };
 
   /**
@@ -508,6 +547,26 @@ const MeasuredItems = () => {
       console.log("newMeasure", newMeasure);
       updateMeasuredTime(user.uid, tmpMonth, newMeasure);
     }
+
+    /**
+     * Todoのステータス更新
+     */
+    const item: any = items.find((item: any) => item["_id"] === itemId);
+    const newItem = { ...item };
+    const newItems = [...items];
+    let obj = newItems.find((x: any) => x["_id"] === itemId);
+    let index = newItems.indexOf(obj);
+    const newTodos = [...item.todos];
+    const newTodo: any = newTodos.find((todo: todo) => todo["_id"] === todoId);
+    const newTodoObj = {
+      ...newTodo,
+      status: "IN_PROGRESS",
+    };
+    let todoIndex = newTodos.indexOf(newTodo);
+    newTodos.splice(todoIndex, 1, newTodoObj);
+    newItem.todos = newTodos;
+    newItems.splice(index, 1, newItem);
+    updateMeasuredItem(user.uid, newItems);
   };
 
   /**
@@ -1048,12 +1107,38 @@ const MeasuredItems = () => {
                           mb: 1,
                         }}
                       >
-                        <IconButton>
-                          <CircleOutlinedIcon />
-                        </IconButton>
+                        {todo.status === "FINISHED" ? (
+                          <IconButton
+                            onClick={() => {
+                              finishTodo({
+                                itemId: item._id,
+                                todoId: todo._id,
+                                status: "IN_PROGRESS",
+                              });
+                            }}
+                          >
+                            <CheckIcon />
+                          </IconButton>
+                        ) : (
+                          <IconButton
+                            onClick={() => {
+                              finishTodo({
+                                itemId: item._id,
+                                todoId: todo._id,
+                                status: "FINISHED",
+                              });
+                            }}
+                          >
+                            <CircleOutlinedIcon />
+                          </IconButton>
+                        )}
                         <Button
                           variant="text"
-                          sx={{ flexGrow: 1 }}
+                          sx={{
+                            flexGrow: 1,
+                            textDecoration:
+                              todo.status === "FINISHED" ? "line-through" : "",
+                          }}
                           onClick={() => {
                             opeEditTodoDialog({ itemId: item._id, todo });
                           }}
@@ -1070,7 +1155,7 @@ const MeasuredItems = () => {
                           >
                             {todo.description}
                           </Typography>
-                          {todo.estimatedTime && (
+                          {todo.estimatedTime !== 0 && (
                             <Typography textAlign="right">
                               {todo.estimatedTime}分
                             </Typography>
@@ -1081,16 +1166,32 @@ const MeasuredItems = () => {
                             </Typography>
                           )}
                         </Button>
-                        <IconButton
-                          onClick={() =>
-                            handleClickItem({
-                              itemId: item._id,
-                              todoId: todo._id,
-                            })
-                          }
-                        >
-                          <PlayCircleOutlinedIcon />
-                        </IconButton>
+                        {todo.status !== "FINISHED" ? (
+                          measure.measuringItem.todoId === todo._id ? (
+                            <IconButton
+                              onClick={() =>
+                                handleClickItem({
+                                  itemId: item._id,
+                                  todoId: todo._id,
+                                })
+                              }
+                            >
+                              <StopCircleOutlinedIcon />
+                            </IconButton>
+                          ) : (
+                            <IconButton
+                              onClick={() =>
+                                handleClickItem({
+                                  itemId: item._id,
+                                  todoId: todo._id,
+                                })
+                              }
+                            >
+                              <PlayCircleOutlinedIcon />
+                            </IconButton>
+                          )
+                        ) : null}
+
                         {/* 同じ幅を保つために同じエレメントを非表示で作成。 */}
                         <IconButton sx={{ visibility: "hidden" }}>
                           <ExpandMoreOutlinedIcon />
