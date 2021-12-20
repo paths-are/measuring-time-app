@@ -58,11 +58,15 @@ function createNewTime(measuringItem: any) {
     start: measuringItem.start,
     end: new Date().getTime(),
   };
-  measuringItem.subItemId
-    ? (newTime.subItemId = measuringItem.subItemId)
-    : null;
-  measuringItem.todoId ? (newTime.todoId = measuringItem.todoId) : null;
-  measuringItem.memo ? (newTime.memo = measuringItem.memo) : null;
+  if (measuringItem.subItemId) {
+    newTime.subItemId = measuringItem.subItemId;
+  }
+  if (measuringItem.todoId) {
+    newTime.todoId = measuringItem.todoId;
+  }
+  if (measuringItem.memo) {
+    newTime.memo = measuringItem.memo;
+  }
   return newTime;
 }
 
@@ -82,7 +86,9 @@ const MeasuredItems = () => {
   const [addTodoDialog, setAddTodoDialog] = React.useState(false);
   type todo = {
     itemId?: string;
+    itemName?: string;
     subItemId?: string | null;
+    subItemName?: string | null;
     _id: string;
     description: string | null;
     estimatedTime: number | null;
@@ -126,12 +132,19 @@ const MeasuredItems = () => {
   /**
    * 新規Todo追加
    */
-  const openAddTodoDialog = (itemId: string, subItemId: string = "") => {
+  const openAddTodoDialog = (itemId: string, subItemId?: string) => {
     setAddTodoDialog(true);
+    const item: any = items.find((item: any) => item["_id"] === itemId);
+    console.log(item);
+    const subItem: any = subItemId
+      ? item.subItems.find((item: any) => item["_id"] === subItemId)
+      : null;
     setNewTodo({
       ...newTodo,
       itemId: itemId,
+      itemName: item.name,
       subItemId: subItemId,
+      subItemName: subItem?.name || null,
     });
   };
   const closeAddTodoDialog = () => {
@@ -193,32 +206,60 @@ const MeasuredItems = () => {
     console.log("newTodo", newTodo);
     console.log(items);
     const item: any = items.find((item: any) => item["_id"] === newTodo.itemId);
-    const newItem = { ...item };
-    const newItems = [...items];
-    let obj = newItems.find((x: any) => x["_id"] === newTodo.itemId);
-    let index = newItems.indexOf(obj);
+
+    let newItems;
     const newTodoObj = {
       _id: `todo_${uuidv4()}`,
       description: newTodo.description,
       estimatedTime: newTodo.estimatedTime,
       unit: newTodo.unit,
       status: newTodo.status,
-      dueDate:
-        newTodo.dueDate !== null ? new Date(newTodo.dueDate).getTime() : null,
+      dueDate: newTodo.dueDate ? new Date(newTodo.dueDate).getTime() : null,
     };
-    console.log("newTodoObj", newTodoObj);
-    const newTodos = item.todos ? [...item.todos, newTodoObj] : [newTodoObj];
-    newItem.todos = newTodos;
-    newItems.splice(index, 1, newItem);
+    const newItem: any = { ...item };
+    if (!newTodo.subItemId) {
+      // アイテムへのTODOの追加
+      console.log("A");
+      console.log("newTodoObj", newTodoObj);
+      const newTodos = newItem.todos
+        ? [...newItem.todos, newTodoObj]
+        : [newTodoObj];
+      newItem.todos = newTodos;
+      newItems = updateListOfObjects({
+        listOfObjects: [...items],
+        newObject: newItem,
+        filter: { key: "_id", value: newItem._id },
+        processType: "REPLACE",
+      });
+    }
+    if (newTodo.subItemId) {
+      // サブアイテムへのTODOの追加
+      console.log("B");
+      console.log("sub---");
+      // const subItem: any = item.subItems.find(
+      //   (item: any) => item["_id"] === newTodo.subItemId
+      // );
+      // const newSubItem: any = { ...subItem };
+      // const newTodos = subItem.todos
+      //   ? [...subItem.todos, newTodoObj]
+      //   : [newTodoObj];
+      // newSubItem.todos = newTodos;
 
+      const newSubItems = item.subItems.map((x: any) => {
+        return x._id === newTodo.subItemId
+          ? { ...x, todos: x.todos ? [...x.todos, newTodoObj] : [newTodoObj] }
+          : x;
+      });
+      newItems = items.map((x: any) => {
+        return x._id === newTodo.itemId ? { ...x, subItems: newSubItems } : x;
+      });
+      // newItem.subItems = newSubItems;
+      console.log(newItems);
+    }
+    // return;
     updateMeasuredItem(user.uid, newItems);
     setNewTodo(newTodoDefaultValues);
 
-    // if (newTodo.subItemId) {
-    //   const subItem: any = item.subItems.find(
-    //     (item: any) => item["_id"] === newTodo.subItemId
-    //   );
-    // }
     closeAddTodoDialog();
   };
   // const formatDueDate = (dueDate: Date | null) => {
@@ -250,6 +291,12 @@ const MeasuredItems = () => {
   const handleClickUpdateTodoButton = () => {
     const item: any = items.find((item: any) => item["_id"] === newTodo.itemId);
     const newItem = { ...item };
+    const subItem: any = newTodo.subItemId
+      ? item.subItems.find(
+          (subItem: any) => subItem["_id"] === newTodo.subItemId
+        )
+      : null;
+    const newSubItem = subItem ? { ...subItem } : subItem;
     const newTodoObj = {
       _id: newTodo._id,
       description: newTodo.description,
@@ -261,15 +308,38 @@ const MeasuredItems = () => {
       finishedDate: null,
     }; // new object
 
-    const newTodos = updateListOfObjects({
-      listOfObjects: [...item.todos],
-      newObject: newTodoObj,
-      filter: { key: "_id", value: newTodo._id },
-      processType: "REPLACE",
-    });
+    let newTodos = [],
+      newItems = [],
+      newSubItems = [];
 
-    newItem.todos = newTodos;
-    const newItems = updateListOfObjects({
+    if (!newTodo.subItemId) {
+      newTodos = updateListOfObjects({
+        listOfObjects: [...item.todos],
+        newObject: newTodoObj,
+        filter: { key: "_id", value: newTodo._id },
+        processType: "REPLACE",
+      });
+
+      newItem.todos = newTodos;
+    }
+    if (newTodo.subItemId) {
+      newTodos = updateListOfObjects({
+        listOfObjects: [...subItem.todos],
+        newObject: newTodoObj,
+        filter: { key: "_id", value: newTodo._id },
+        processType: "REPLACE",
+      });
+      newSubItem.todos = newTodos;
+      newSubItems = updateListOfObjects({
+        listOfObjects: [...item.subItems],
+        newObject: newSubItem,
+        filter: { key: "_id", value: newTodo.subItemId },
+        processType: "REPLACE",
+      });
+      newItem.subItems = newSubItems;
+    }
+
+    newItems = updateListOfObjects({
       listOfObjects: [...items],
       newObject: newItem,
       filter: { key: "_id", value: newTodo.itemId as string },
@@ -290,35 +360,79 @@ const MeasuredItems = () => {
   /**
    * 操作 Todo
    */
-  const finishTodo = ({
+  const updateTodoStatus = ({
     itemId,
     subItemId,
     todoId,
-    status,
+    statusToBe,
   }: {
     itemId: string;
     subItemId?: string;
     todoId: string;
-    status: "IN_PROGRESS" | "FINISHED";
+    statusToBe: "IN_PROGRESS" | "FINISHED";
   }) => {
     console.log(itemId, subItemId, todoId);
     const item: any = items.find((item: any) => item["_id"] === itemId);
     const newItem = { ...item };
-    const newItems = [...items];
-    let obj = newItems.find((x: any) => x["_id"] === itemId);
-    let index = newItems.indexOf(obj);
 
-    const newTodos = [...item.todos];
-    const newTodo: any = newTodos.find((todo: todo) => todo["_id"] === todoId);
-    const newTodoObj = {
-      ...newTodo,
-      status: status,
-      finishedDate: status === "IN_PROGRESS" ? null : new Date().getTime(),
-    };
-    let todoIndex = newTodos.indexOf(newTodo);
-    newTodos.splice(todoIndex, 1, newTodoObj);
-    newItem.todos = newTodos;
-    newItems.splice(index, 1, newItem);
+    let newItems;
+    if (!subItemId) {
+      console.log("AA");
+      const todos = [...item.todos];
+      const targetTodo: todo = todos.find(
+        (todo: todo) => todo["_id"] === todoId
+      );
+
+      const newTodo = {
+        ...targetTodo,
+        status: statusToBe,
+        finishedDate:
+          statusToBe === "IN_PROGRESS" ? null : new Date().getTime(),
+      };
+
+      const newTodos = updateListOfObjects({
+        listOfObjects: todos,
+        newObject: newTodo,
+        filter: { key: "_id", value: newTodo._id },
+        processType: "REPLACE",
+      });
+
+      newItem.todos = newTodos;
+    }
+    if (subItemId) {
+      console.log("BB");
+      const subItem: any = item.subItems.find(
+        (subItem: any) => subItem["_id"] === subItemId
+      );
+
+      const todos = [...subItem.todos];
+      const targetTodo: todo = todos.find(
+        (todo: todo) => todo["_id"] === todoId
+      );
+      const newTodo = {
+        ...targetTodo,
+        status: statusToBe,
+        finishedDate:
+          statusToBe === "IN_PROGRESS" ? null : new Date().getTime(),
+      };
+      const newTodos = updateListOfObjects({
+        listOfObjects: todos,
+        newObject: newTodo,
+        filter: { key: "_id", value: newTodo._id },
+        processType: "REPLACE",
+      });
+      newItem.subItems = item.subItems.map((x: any) => {
+        return x._id === subItem._id ? { ...x, todos: newTodos } : x;
+      });
+      console.log("newItem", newItem);
+    }
+    newItems = updateListOfObjects({
+      listOfObjects: [...items],
+      newObject: newItem,
+      filter: { key: "_id", value: item._id },
+      processType: "REPLACE",
+    });
+    console.log("newItems", newItems);
 
     updateMeasuredItem(user.uid, newItems);
     setNewTodo(newTodoDefaultValues);
@@ -392,12 +506,13 @@ const MeasuredItems = () => {
       return;
     }
     if (e.target.name.substring(0, 8) === "subItems") {
-      let newSubItems = [...targetItem.subItems];
-      let obj = newSubItems.find((x: any) => x["_id"] === e.target.id);
-      let index = newSubItems.indexOf(obj);
-      const newSubItem = { ...obj, name: e.target.value };
-
-      newSubItems.splice(index, 1, newSubItem);
+      const newSubItems = targetItem.subItems.map((subItem: any) => {
+        if (subItem._id === e.target.id) {
+          return { ...subItem, name: e.target.value };
+        } else {
+          return subItem;
+        }
+      });
 
       setTargetItem({ ...targetItem, subItems: newSubItems });
       return;
@@ -567,21 +682,59 @@ const MeasuredItems = () => {
     if (todoId) {
       const item: any = items.find((item: any) => item["_id"] === itemId);
       const newItem = { ...item };
-      const newItems = [...items];
-      let obj = newItems.find((x: any) => x["_id"] === itemId);
-      let index = newItems.indexOf(obj);
-      const newTodos = [...item.todos];
-      const newTodo: any = newTodos.find(
-        (todo: todo) => todo["_id"] === todoId
-      );
-      const newTodoObj = {
-        ...newTodo,
-        status: "IN_PROGRESS",
-      };
-      let todoIndex = newTodos.indexOf(newTodo);
-      newTodos.splice(todoIndex, 1, newTodoObj);
-      newItem.todos = newTodos;
-      newItems.splice(index, 1, newItem);
+
+      if (!subItemId) {
+        const todos = [...item.todos];
+        const targetTodo: todo = todos.find(
+          (todo: todo) => todo["_id"] === todoId
+        );
+        const newTodo: todo = {
+          ...targetTodo,
+          status: "IN_PROGRESS",
+        };
+        const newTodos = updateListOfObjects({
+          listOfObjects: todos,
+          newObject: newTodo,
+          filter: { key: "_id", value: newTodo._id },
+          processType: "REPLACE",
+        });
+        newItem.todos = newTodos;
+      }
+      if (subItemId) {
+        const subItem: any = item.subItems.find(
+          (subItem: any) => subItem["_id"] === subItemId
+        );
+        const newSubItem = { ...subItem };
+        const todos = [...subItem.todos];
+        const targetTodo: todo = todos.find(
+          (todo: todo) => todo["_id"] === todoId
+        );
+        const newTodo: todo = {
+          ...targetTodo,
+          status: "IN_PROGRESS",
+        };
+        const newTodos = updateListOfObjects({
+          listOfObjects: todos,
+          newObject: newTodo,
+          filter: { key: "_id", value: newTodo._id },
+          processType: "REPLACE",
+        });
+        newSubItem.todos = newTodos;
+        // newItem.subItems = newSubItem;
+        newItem.subItems = item.subItems.map((x: any) => {
+          return x._id === subItem._id ? { ...x, subItems: newSubItem } : x;
+        });
+        console.log("newSubItem", newSubItem);
+      }
+
+      console.log("newItem", newItem);
+      const newItems = updateListOfObjects({
+        listOfObjects: [...items],
+        newObject: newItem,
+        filter: { key: "_id", value: item._id },
+        processType: "REPLACE",
+      });
+      console.log("newItems", newItems);
       updateMeasuredItem(user.uid, newItems);
     }
   };
@@ -623,7 +776,11 @@ const MeasuredItems = () => {
       <Dialog open={addTodoDialog} onClose={closeAddTodoDialog} fullWidth>
         <DialogTitle>Todoの追加</DialogTitle>
         <DialogContent>
-          <DialogContentText>Todoアイテムを追加しよう！！</DialogContentText>
+          <DialogContentText>
+            「{`${newTodo.itemName}`}
+            {newTodo.subItemName && ` > ${newTodo.subItemName}`}」
+            へTodoを追加しよう！！
+          </DialogContentText>
           <TextField
             autoFocus
             margin="dense"
@@ -882,7 +1039,7 @@ const MeasuredItems = () => {
                 </FormControl>
                 <Button
                   onClick={() => {
-                    handleDeleteSubItem(ele._id);
+                    handleDeleteSubItem(ele["_id"]);
                   }}
                   sx={{ color: "red" }}
                 >
@@ -1113,10 +1270,10 @@ const MeasuredItems = () => {
                         {todo.status === "FINISHED" ? (
                           <IconButton
                             onClick={() => {
-                              finishTodo({
+                              updateTodoStatus({
                                 itemId: item._id,
                                 todoId: todo._id,
-                                status: "IN_PROGRESS",
+                                statusToBe: "IN_PROGRESS",
                               });
                             }}
                           >
@@ -1125,10 +1282,10 @@ const MeasuredItems = () => {
                         ) : (
                           <IconButton
                             onClick={() => {
-                              finishTodo({
+                              updateTodoStatus({
                                 itemId: item._id,
                                 todoId: todo._id,
-                                status: "FINISHED",
+                                statusToBe: "FINISHED",
                               });
                             }}
                           >
@@ -1204,6 +1361,8 @@ const MeasuredItems = () => {
                     </Grid>
                   );
                 })}
+
+              {/* サブアイテム表示 */}
               {!editMode &&
                 item.expandSubItems &&
                 item.subItems?.map((subItem: any, index: number) => {
@@ -1267,6 +1426,132 @@ const MeasuredItems = () => {
                           <ExpandMoreOutlinedIcon />
                         </IconButton>
                       </Grid>
+                      {/* Todo表示 */}
+                      {subItem.todos?.map((todo: any, index: number) => {
+                        return (
+                          <Grid
+                            container
+                            key={index}
+                            sx={{
+                              my: 1,
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "right",
+                            }}
+                          >
+                            <Grid
+                              item
+                              xs={10}
+                              sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                mb: 1,
+                              }}
+                            >
+                              {todo.status === "FINISHED" ? (
+                                <IconButton
+                                  onClick={() => {
+                                    updateTodoStatus({
+                                      itemId: item._id,
+                                      subItemId: subItem._id,
+                                      todoId: todo._id,
+                                      statusToBe: "IN_PROGRESS",
+                                    });
+                                  }}
+                                >
+                                  <CheckIcon />
+                                </IconButton>
+                              ) : (
+                                <IconButton
+                                  onClick={() => {
+                                    updateTodoStatus({
+                                      itemId: item._id,
+                                      subItemId: subItem._id,
+                                      todoId: todo._id,
+                                      statusToBe: "FINISHED",
+                                    });
+                                  }}
+                                >
+                                  <CircleOutlinedIcon />
+                                </IconButton>
+                              )}
+                              <Button
+                                variant="text"
+                                sx={{
+                                  flexGrow: 1,
+                                  textDecoration:
+                                    todo.status === "FINISHED"
+                                      ? "line-through"
+                                      : "",
+                                }}
+                                onClick={() => {
+                                  opeEditTodoDialog({
+                                    itemId: item._id,
+                                    subItemId: subItem._id,
+                                    todo,
+                                  });
+                                }}
+                              >
+                                <Typography
+                                  textAlign="left"
+                                  sx={{
+                                    flexGrow: 1,
+                                    color:
+                                      measure.measuringItem.todoId === todo._id
+                                        ? "red"
+                                        : "",
+                                  }}
+                                >
+                                  {todo.description}
+                                </Typography>
+                                {todo.estimatedTime !== 0 && (
+                                  <Typography textAlign="right">
+                                    {todo.estimatedTime}
+                                    {todoUnits[todo.unit]}
+                                  </Typography>
+                                )}
+                                {todo.dueDate && (
+                                  <Typography textAlign="right" sx={{ pl: 1 }}>
+                                    {formatDate(todo.dueDate, "M/D")}
+                                  </Typography>
+                                )}
+                              </Button>
+                              {todo.status !== "FINISHED" ? (
+                                measure.measuringItem.todoId === todo._id ? (
+                                  <IconButton
+                                    onClick={() =>
+                                      handleClickItem({
+                                        itemId: item._id,
+                                        subItemId: subItem._id,
+                                        todoId: todo._id,
+                                      })
+                                    }
+                                  >
+                                    <StopCircleOutlinedIcon />
+                                  </IconButton>
+                                ) : (
+                                  <IconButton
+                                    onClick={() =>
+                                      handleClickItem({
+                                        itemId: item._id,
+                                        subItemId: subItem._id,
+                                        todoId: todo._id,
+                                      })
+                                    }
+                                  >
+                                    <PlayCircleOutlinedIcon />
+                                  </IconButton>
+                                )
+                              ) : null}
+
+                              {/* 同じ幅を保つために同じエレメントを非表示で作成。 */}
+                              <IconButton sx={{ visibility: "hidden" }}>
+                                <ExpandMoreOutlinedIcon />
+                              </IconButton>
+                            </Grid>
+                          </Grid>
+                        );
+                      })}
                     </Grid>
                   );
                 })}

@@ -123,7 +123,7 @@ export function updateListOfObjects({
   filter,
   processType,
 }: {
-  listOfObjects: {}[];
+  listOfObjects: any;
   newObject: {};
   filter: {
     key: string;
@@ -135,8 +135,11 @@ export function updateListOfObjects({
     (item: any) => item[filter.key] === filter.value
   );
   let updateIndex = listOfObjects.indexOf(targetObject); // index 確認
+  console.log(updateIndex);
   if (processType === "REPLACE") {
+    console.log(listOfObjects);
     listOfObjects.splice(updateIndex, 1, newObject); // process
+    console.log(listOfObjects);
   }
 
   return listOfObjects;
