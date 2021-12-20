@@ -113,3 +113,31 @@ export function withinRange(
     }
   }
 }
+
+/**
+ *
+ */
+export function updateListOfObjects({
+  listOfObjects,
+  newObject,
+  filter,
+  processType,
+}: {
+  listOfObjects: {}[];
+  newObject: {};
+  filter: {
+    key: string;
+    value: string | number;
+  };
+  processType: "REPLACE";
+}): {}[] {
+  const targetObject: any = listOfObjects.find(
+    (item: any) => item[filter.key] === filter.value
+  );
+  let updateIndex = listOfObjects.indexOf(targetObject); // index 確認
+  if (processType === "REPLACE") {
+    listOfObjects.splice(updateIndex, 1, newObject); // process
+  }
+
+  return listOfObjects;
+}

@@ -31,6 +31,7 @@ import {
   // formatDate,
   orgFloor,
   minutesToHoursDisplay,
+  updateListOfObjects,
 } from "@/src/lib/utils";
 import { useRecoilValue, useRecoilState } from "recoil";
 import {
@@ -113,6 +114,14 @@ const MeasuredItems = () => {
     "#673ab7",
     "#757575",
   ];
+
+  const todoUnits: {
+    [key: string]: string;
+  } = {
+    MINUTES: "分",
+    HOURS: "時間",
+    PERSON_DAY: "人日",
+  };
 
   /**
    * 新規Todo追加
@@ -241,9 +250,6 @@ const MeasuredItems = () => {
   const handleClickUpdateTodoButton = () => {
     const item: any = items.find((item: any) => item["_id"] === newTodo.itemId);
     const newItem = { ...item };
-    const newItems = [...items];
-    let obj = newItems.find((x: any) => x["_id"] === newTodo.itemId);
-    let index = newItems.indexOf(obj);
     const newTodoObj = {
       _id: newTodo._id,
       description: newTodo.description,
@@ -253,15 +259,22 @@ const MeasuredItems = () => {
       dueDate:
         newTodo.dueDate !== null ? new Date(newTodo.dueDate).getTime() : null,
       finishedDate: null,
-    };
-    const newTodos = [...item.todos];
-    const todo: any = newTodos.find(
-      (todo: todo) => todo["_id"] === newTodo._id
-    );
-    let todoIndex = newTodos.indexOf(todo);
-    newTodos.splice(todoIndex, 1, newTodoObj);
+    }; // new object
+
+    const newTodos = updateListOfObjects({
+      listOfObjects: [...item.todos],
+      newObject: newTodoObj,
+      filter: { key: "_id", value: newTodo._id },
+      processType: "REPLACE",
+    });
+
     newItem.todos = newTodos;
-    newItems.splice(index, 1, newItem);
+    const newItems = updateListOfObjects({
+      listOfObjects: [...items],
+      newObject: newItem,
+      filter: { key: "_id", value: newTodo.itemId as string },
+      processType: "REPLACE",
+    });
 
     updateMeasuredItem(user.uid, newItems);
     setNewTodo(newTodoDefaultValues);
@@ -551,22 +564,26 @@ const MeasuredItems = () => {
     /**
      * Todoのステータス更新
      */
-    const item: any = items.find((item: any) => item["_id"] === itemId);
-    const newItem = { ...item };
-    const newItems = [...items];
-    let obj = newItems.find((x: any) => x["_id"] === itemId);
-    let index = newItems.indexOf(obj);
-    const newTodos = [...item.todos];
-    const newTodo: any = newTodos.find((todo: todo) => todo["_id"] === todoId);
-    const newTodoObj = {
-      ...newTodo,
-      status: "IN_PROGRESS",
-    };
-    let todoIndex = newTodos.indexOf(newTodo);
-    newTodos.splice(todoIndex, 1, newTodoObj);
-    newItem.todos = newTodos;
-    newItems.splice(index, 1, newItem);
-    updateMeasuredItem(user.uid, newItems);
+    if (todoId) {
+      const item: any = items.find((item: any) => item["_id"] === itemId);
+      const newItem = { ...item };
+      const newItems = [...items];
+      let obj = newItems.find((x: any) => x["_id"] === itemId);
+      let index = newItems.indexOf(obj);
+      const newTodos = [...item.todos];
+      const newTodo: any = newTodos.find(
+        (todo: todo) => todo["_id"] === todoId
+      );
+      const newTodoObj = {
+        ...newTodo,
+        status: "IN_PROGRESS",
+      };
+      let todoIndex = newTodos.indexOf(newTodo);
+      newTodos.splice(todoIndex, 1, newTodoObj);
+      newItem.todos = newTodos;
+      newItems.splice(index, 1, newItem);
+      updateMeasuredItem(user.uid, newItems);
+    }
   };
 
   /**
@@ -655,13 +672,6 @@ const MeasuredItems = () => {
                 onChange={changeTodoTimeUnit}
               >
                 {(() => {
-                  const todoUnits: {
-                    [key: string]: string;
-                  } = {
-                    MINUTES: "分",
-                    HOURS: "時間",
-                    PERSON_DAY: "人日",
-                  };
                   const menuItems: any = [];
                   Object.keys(todoUnits).forEach((key) => {
                     menuItems.push(
@@ -748,13 +758,6 @@ const MeasuredItems = () => {
                 onChange={changeTodoTimeUnit}
               >
                 {(() => {
-                  const todoUnits: {
-                    [key: string]: string;
-                  } = {
-                    MINUTES: "分",
-                    HOURS: "時間",
-                    PERSON_DAY: "人日",
-                  };
                   const menuItems: any = [];
                   Object.keys(todoUnits).forEach((key) => {
                     menuItems.push(
@@ -1157,7 +1160,8 @@ const MeasuredItems = () => {
                           </Typography>
                           {todo.estimatedTime !== 0 && (
                             <Typography textAlign="right">
-                              {todo.estimatedTime}分
+                              {todo.estimatedTime}
+                              {todoUnits[todo.unit]}
                             </Typography>
                           )}
                           {todo.dueDate && (
