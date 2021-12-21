@@ -123,14 +123,14 @@ export function updateListOfObjects({
   filter,
   processType,
 }: {
-  listOfObjects: any;
+  listOfObjects: any[];
   newObject: {};
   filter: {
     key: string;
     value: string | number;
   };
   processType: "REPLACE";
-}): {}[] {
+}): any[] {
   const targetObject: any = listOfObjects.find(
     (item: any) => item[filter.key] === filter.value
   );

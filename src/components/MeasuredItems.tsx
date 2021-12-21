@@ -7,9 +7,7 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
-import DescriptionIcon from "@mui/icons-material/Description";
 import ExpandMoreOutlinedIcon from "@mui/icons-material/ExpandMoreOutlined";
-import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
 
 import { v4 as uuidv4 } from "uuid";
@@ -50,6 +48,7 @@ import Slider from "@mui/material/Slider";
 
 import AddTodoIconComponent from "@/src/components/measure/AddTodoIcon";
 import TodoItem from "@/src/components/measure/TodoItem";
+import NoteIcon from "@/src/components/measure/NoteIcon";
 
 function createNewTime(measuringItem: MeasuringItem): Time | void {
   if (!measuringItem._id || !measuringItem.start) return;
@@ -86,7 +85,6 @@ const MeasuredItems = () => {
   const [targetItem, setTargetItem] = React.useState<TargetItem | null>(null);
   const totalTimes = useRecoilValue(totalTimesAtom);
   const [editMode, setEditMode] = React.useState(false);
-  const [noteEditDialog, setNoteEditDialog] = React.useState(false);
   type ClientTodo = Todo & {
     itemId?: string; // 追加
     itemName?: string; // 追加
@@ -254,7 +252,6 @@ const MeasuredItems = () => {
     closeEditTodoDialog();
   };
 
-
   /**
    * 新規アイテム追加
    */
@@ -378,7 +375,6 @@ const MeasuredItems = () => {
     updateMeasuredItem(user.uid, newItems);
     setTargetItem(null);
     closeEditDialog();
-    closeNoteDialog();
   };
 
   /**
@@ -612,24 +608,6 @@ const MeasuredItems = () => {
     updateMeasuredItem(user.uid, newItems);
   };
 
-  /**
-   * ノート機能
-   */
-  const openNoteDialog = () => {
-    setNoteEditDialog(true);
-  };
-  const closeNoteDialog = () => {
-    setNoteEditDialog(false);
-  };
-  const handleClickEmptyNote = (item: any): void => {
-    openNoteDialog();
-    setTargetItem(item);
-  };
-  const handleOnChangeNote = (event: any) => {
-    const newValue = event.target.value;
-    if (!newValue && targetItem)
-      setTargetItem({ ...targetItem, note: newValue });
-  };
   return (
     <>
       {/* Todo編集フォーム */}
@@ -856,32 +834,6 @@ const MeasuredItems = () => {
         </DialogActions>
       </Dialog>
 
-      {/* ノート機能 */}
-      <Dialog open={noteEditDialog} onClose={closeNoteDialog} fullWidth>
-        <DialogTitle>{targetItem?.name}のノート</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            ノートやTodoとしてメモしておきたいことを追加しよう！
-          </DialogContentText>
-          <TextField
-            margin="dense"
-            id="note"
-            label="ノート"
-            type="text"
-            fullWidth
-            multiline
-            rows={10}
-            variant="filled"
-            value={targetItem?.note}
-            onChange={handleOnChangeNote}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeNoteDialog}>戻る</Button>
-          <Button onClick={handleUpdateItem}>更新</Button>
-        </DialogActions>
-      </Dialog>
-
       {editMode ? (
         <Box
           sx={{
@@ -949,13 +901,7 @@ const MeasuredItems = () => {
             >
               {/* アイテム表示 */}
               <Grid item xs={12} sx={{ display: "flex" }}>
-                <IconButton onClick={() => handleClickEmptyNote(item)}>
-                  {item.note ? (
-                    <DescriptionIcon />
-                  ) : (
-                    <InsertDriveFileOutlinedIcon />
-                  )}
-                </IconButton>
+                <NoteIcon item={item} />
                 <AddTodoIconComponent itemId={item._id} />
                 <Button
                   variant={isActive ? "outlined" : "contained"}
