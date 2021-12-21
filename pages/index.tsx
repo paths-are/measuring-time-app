@@ -247,6 +247,13 @@ export default function Index() {
     const calculateTotalTimes = async (range?: any) => {
       let totalTimes: any = {};
       measure.times?.map((time: any) => {
+        let duration = (time.end - time.start) / 1000;
+        const todoId = time["todoId"] || null;
+        if (todoId) {
+          totalTimes[todoId] = totalTimes[todoId]
+            ? totalTimes[todoId] + duration
+            : duration;
+        }
         if (range) {
           const result: any = withinRange(time, range, "AND_OR");
           if (!result.start && result.end) {
@@ -255,28 +262,29 @@ export default function Index() {
           if (!result.start && !result.end) return;
         }
 
-        const duration = (time.end - time.start) / 1000;
-        const _id = time["itemId"];
+        duration = (time.end - time.start) / 1000;
+        const itemId = time["itemId"];
         const subItemId = time["subItemId"] || null;
+        if (todoId) console.log(time);
 
-        if (!totalTimes[_id]) totalTimes[_id] = {};
+        if (!totalTimes[itemId]) totalTimes[itemId] = {};
 
         if (subItemId) {
-          totalTimes[_id][subItemId] = totalTimes[_id][subItemId]
-            ? totalTimes[_id][subItemId] + duration
+          totalTimes[itemId][subItemId] = totalTimes[itemId][subItemId]
+            ? totalTimes[itemId][subItemId] + duration
             : duration;
         } else {
-          totalTimes[_id][_id] = totalTimes[_id][_id]
-            ? totalTimes[_id][_id] + duration
+          totalTimes[itemId][itemId] = totalTimes[itemId][itemId]
+            ? totalTimes[itemId][itemId] + duration
             : duration;
         }
-        totalTimes[_id].sum = totalTimes[_id].sum
-          ? totalTimes[_id].sum + duration
+        totalTimes[itemId].sum = totalTimes[itemId].sum
+          ? totalTimes[itemId].sum + duration
           : duration;
         totalTimes.sum = totalTimes.sum ? totalTimes.sum + duration : duration;
       });
       setTotalTimes(totalTimes);
-      console.log(totalTimes);
+      console.log("totalTimes", totalTimes);
     };
 
     const range = {

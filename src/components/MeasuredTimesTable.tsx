@@ -94,7 +94,7 @@ const MeasuredTimesTable = React.memo(() => {
   const handleDeleteTime = () => {
     const times = [...measure.times];
 
-    let obj = times.find((x: any) => x["_id"] === selectedTime["_id"]);
+    let obj: any = times.find((x: any) => x["_id"] === selectedTime["_id"]);
     let index = times.indexOf(obj);
     times.splice(index, 1); // 削除
 
@@ -118,7 +118,7 @@ const MeasuredTimesTable = React.memo(() => {
     setDialogOpen(false);
 
     const newTimes = [...measure.times];
-    let obj = newTimes.find((x: any) => x["_id"] === selectedTime["_id"]);
+    let obj: any = newTimes.find((x: any) => x["_id"] === selectedTime["_id"]);
     let index = newTimes.indexOf(obj);
     newTimes.splice(index, 1, selectedTime);
 
@@ -355,7 +355,7 @@ const MeasuredTimesTable = React.memo(() => {
                     )
                 : null;
               displayDate = formatDate(time.start, "YYYYMMDD");
-              let beforeTime = index !== 0 ? measure.times[index - 1] : 0;
+              let beforeTime: any = index !== 0 ? measure.times[index - 1] : 0;
               let beforeDate = formatDate(beforeTime.start, "YYYYMMDD");
               return (
                 <>
@@ -398,7 +398,9 @@ const MeasuredTimesTable = React.memo(() => {
                       {measuredItem?.name}
                     </TableCell>
                     <TableCell align="left">{measuredSubItem?.name}</TableCell>
-                    <TableCell align="left">{measuredTodo?.description}</TableCell>
+                    <TableCell align="left">
+                      {measuredTodo?.description}
+                    </TableCell>
                     <TableCell align="left">{time?.memo}</TableCell>
                     <TableCell align="right">
                       {formatDate(time.start, "hh:mm")}

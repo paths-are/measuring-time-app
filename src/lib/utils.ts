@@ -45,7 +45,7 @@ export function minutesToHoursDisplay(minutes: number) {
     const minutesAmari = orgFloor(minutes % (hour * 60), 1);
     return `${hour}時間${minutesAmari}分`;
   } else {
-    return `${minutes}分`;
+    return `${orgFloor(minutes, 1)}分`;
   }
 }
 
