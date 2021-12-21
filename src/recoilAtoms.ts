@@ -6,8 +6,8 @@ export type Todo = {
   estimatedTime: number | null;
   unit: "MINUTES" | "HOURS" | "PERSON_DAY";
   status: "NOT_STARTED" | "IN_PROGRESS" | "FINISHED";
-  dueDate: Date | null;
-  finishedDate: Date | null;
+  dueDate: number | null;
+  finishedDate: number | null;
 };
 export type SubItem = {
   _id: string;

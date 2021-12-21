@@ -106,6 +106,8 @@ const MeasuredItems = () => {
     itemName?: string;
     subItemId?: string | null;
     subItemName?: string | null;
+    dueDate: Date | number | null;
+    finishedDate: Date | number | null;
   };
   const newTodoDefaultValues: ClientTodo = {
     itemId: "",
@@ -286,7 +288,7 @@ const MeasuredItems = () => {
   }: {
     itemId: string;
     subItemId?: string;
-    todo: todo;
+    todo: Todo;
   }) => {
     setEditTodoDialog(true);
     setNewTodo({
@@ -1274,14 +1276,12 @@ const MeasuredItems = () => {
               {/* Todo表示 */}
               {!editMode &&
                 item.expandSubItems &&
-                item.todos?.map((todo: any, index: number) => {
-                  // console.log(new Date(todo.finishedDate));
+                item.todos?.map((todo: Todo, index: number) => {
+                  if (todo.finishedDate === null) return null;
                   if (
                     (todo.finishedDate >= new Date().setHours(0, 0, 0) &&
-                      todo.ststus !== "FINISHED") ||
-                    // 完了時刻が今日の完了済みTODO or
-                    todo.ststus !== "FINISHED"
-                    // 完了してないTODO
+                      todo.status === "FINISHED") ||
+                    todo.status !== "FINISHED"
                   ) {
                     return (
                       <Grid
@@ -1355,7 +1355,9 @@ const MeasuredItems = () => {
                             </Typography>
                             <Typography textAlign="right">
                               {totalTimes[todo._id] &&
-                                `${minutesToHoursDisplay(totalTimes[todo._id] / 60)}/`}
+                                `${minutesToHoursDisplay(
+                                  totalTimes[todo._id] / 60
+                                )}/`}
                             </Typography>
                             {todo.estimatedTime !== 0 && (
                               <Typography textAlign="right">
@@ -1472,12 +1474,13 @@ const MeasuredItems = () => {
                       </Grid>
 
                       {/* Todo表示 */}
-                      {subItem.todos?.map((todo: any, index: number) => {
+                      {subItem.todos?.map((todo: Todo, index: number) => {
+                        if (todo.finishedDate === null) return null;
                         if (
                           (todo.finishedDate >= new Date().setHours(0, 0, 0) &&
-                            todo.ststus !== "FINISHED") ||
+                            todo.status === "FINISHED") ||
                           // 完了時刻が今日の完了済みTODO or
-                          todo.ststus !== "FINISHED"
+                          todo.status !== "FINISHED"
                           // 完了してないTODO
                         ) {
                           return (
