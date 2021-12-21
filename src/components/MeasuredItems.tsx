@@ -1,23 +1,14 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
-import { Button, TextField, Grid, Typography } from "@mui/material";
+import { Button, TextField, Grid } from "@mui/material";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
-import DescriptionIcon from "@mui/icons-material/Description";
 import ExpandMoreOutlinedIcon from "@mui/icons-material/ExpandMoreOutlined";
-import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
-import InsertDriveFileOutlinedIcon from "@mui/icons-material/InsertDriveFileOutlined";
-import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
-import AddTaskOutlinedIcon from "@mui/icons-material/AddTaskOutlined";
-import PlayCircleOutlinedIcon from "@mui/icons-material/PlayCircleOutlined";
-import { formatDate } from "@/src/lib/utils";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
-import CheckIcon from "@mui/icons-material/Check";
-import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 
 import { v4 as uuidv4 } from "uuid";
 import { useUser } from "@/src/lib/auth";
@@ -28,7 +19,6 @@ import {
   updateMeasuredTime,
 } from "@/src/lib/firestore";
 import {
-  // formatDate,
   orgFloor,
   minutesToHoursDisplay,
   updateListOfObjects,
@@ -42,21 +32,27 @@ import {
   Item,
   SubItem,
   MeasuredItems as Items,
+  MeasuringItem,
+  Time,
 } from "@/src/recoilAtoms";
 
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
-import Select from "@mui/material/Select";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
 
 import LocalizationProvider from "@mui/lab/LocalizationProvider";
 import DateAdapterMoment from "@mui/lab/AdapterMoment";
 import DatePicker from "@mui/lab/DatePicker";
 import Slider from "@mui/material/Slider";
 
-function createNewTime(measuringItem: any) {
-  let newTime: any = {};
-  newTime = {
+import AddTodoIconComponent from "@/src/components/measure/AddTodoIcon";
+import TodoItem from "@/src/components/measure/TodoItem";
+import NoteIcon from "@/src/components/measure/NoteIcon";
+
+function createNewTime(measuringItem: MeasuringItem): Time | void {
+  if (!measuringItem._id || !measuringItem.start) return;
+  let newTime: Time = {
     itemId: measuringItem["_id"],
     _id: `time_${uuidv4()}`,
     start: measuringItem.start,
@@ -83,31 +79,19 @@ const MeasuredItems = () => {
   const [newDialog, setNewDialog] = React.useState(false);
   const [deleteDialog, setDeleteDialog] = React.useState(false);
   const [editDialog, setEditDialog] = React.useState(false);
-  const [targetItem, setTargetItem] = React.useState<any>({});
+  type TargetItem = Item & {
+    newSubItem?: string | null;
+  };
+  const [targetItem, setTargetItem] = React.useState<TargetItem | null>(null);
   const totalTimes = useRecoilValue(totalTimesAtom);
   const [editMode, setEditMode] = React.useState(false);
-  const [noteEditDialog, setNoteEditDialog] = React.useState(false);
-  const [addTodoDialog, setAddTodoDialog] = React.useState(false);
-  type todo = {
-    itemId?: string;
-    itemName?: string;
-    subItemId?: string | null;
-    subItemName?: string | null;
-    _id: string;
-    description: string | null;
-    estimatedTime: number | null;
-    unit: "MINUTES" | "HOURS" | "PERSON_DAY";
-    status: "NOT_STARTED" | "IN_PROGRESS" | "FINISHED";
-    dueDate: Date | null;
-    finishedDate: Date | null;
-  };
   type ClientTodo = Todo & {
-    itemId?: string;
-    itemName?: string;
-    subItemId?: string | null;
-    subItemName?: string | null;
-    dueDate: Date | number | null;
-    finishedDate: Date | number | null;
+    itemId?: string; // 追加
+    itemName?: string; // 追加
+    subItemId?: string | null; // 追加
+    subItemName?: string | null; // 追加
+    dueDate: Date | number | null; // 上書き
+    finishedDate?: Date | number | null; // 上書き
   };
   const newTodoDefaultValues: ClientTodo = {
     itemId: "",
@@ -142,34 +126,15 @@ const MeasuredItems = () => {
     PERSON_DAY: "人日",
   };
 
-  /**
-   * 新規Todo追加
-   */
-  const openAddTodoDialog = (itemId: string, subItemId?: string) => {
-    setAddTodoDialog(true);
-    const item: any = items.find((item: Item) => item["_id"] === itemId);
-    console.log(item);
-    const subItem: any = subItemId
-      ? item.subItems.find((item: SubItem) => item["_id"] === subItemId)
-      : null;
-    setNewTodo({
-      ...newTodo,
-      itemId: itemId,
-      itemName: item.name,
-      subItemId: subItemId,
-      subItemName: subItem?.name || null,
-    });
-  };
-  const closeAddTodoDialog = () => {
-    setAddTodoDialog(false);
-    setNewTodo(newTodoDefaultValues);
-  };
-  const changeTodoTimeUnit = (e: any): void => {
-    const newUnit = e.target.value;
+  const changeTodoTimeUnit = (
+    event: SelectChangeEvent
+    // child?: object
+  ): void => {
+    const newUnit = event.target.value;
     if (!newUnit) return;
     setNewTodo({
       ...newTodo,
-      unit: newUnit,
+      unit: newUnit as "MINUTES" | "HOURS" | "PERSON_DAY",
       estimatedTime: 0,
     });
   };
@@ -215,98 +180,18 @@ const MeasuredItems = () => {
       estimatedTime: value,
     });
   };
-  const handleClickAddNewTodoButton = () => {
-    console.log("newTodo", newTodo);
-    console.log(items);
-    const item: any = items.find((item: any) => item["_id"] === newTodo.itemId);
 
-    let newItems;
-    const newTodoObj = {
-      _id: `todo_${uuidv4()}`,
-      description: newTodo.description,
-      estimatedTime: newTodo.estimatedTime,
-      unit: newTodo.unit,
-      status: newTodo.status,
-      dueDate: newTodo.dueDate ? new Date(newTodo.dueDate).getTime() : null,
-    };
-    const newItem: any = { ...item };
-    if (!newTodo.subItemId) {
-      // アイテムへのTODOの追加
-      console.log("A");
-      console.log("newTodoObj", newTodoObj);
-      const newTodos = newItem.todos
-        ? [...newItem.todos, newTodoObj]
-        : [newTodoObj];
-      newItem.todos = newTodos;
-      newItems = updateListOfObjects({
-        listOfObjects: [...items],
-        newObject: newItem,
-        filter: { key: "_id", value: newItem._id },
-        processType: "REPLACE",
-      });
-    }
-    if (newTodo.subItemId) {
-      // サブアイテムへのTODOの追加
-      console.log("B");
-      console.log("sub---");
-      // const subItem: any = item.subItems.find(
-      //   (item: any) => item["_id"] === newTodo.subItemId
-      // );
-      // const newSubItem: any = { ...subItem };
-      // const newTodos = subItem.todos
-      //   ? [...subItem.todos, newTodoObj]
-      //   : [newTodoObj];
-      // newSubItem.todos = newTodos;
-
-      const newSubItems = item.subItems.map((x: any) => {
-        return x._id === newTodo.subItemId
-          ? { ...x, todos: x.todos ? [...x.todos, newTodoObj] : [newTodoObj] }
-          : x;
-      });
-      newItems = items.map((x: any) => {
-        return x._id === newTodo.itemId ? { ...x, subItems: newSubItems } : x;
-      });
-      // newItem.subItems = newSubItems;
-      console.log(newItems);
-    }
-    // return;
-    updateMeasuredItem(user.uid, newItems);
-    setNewTodo(newTodoDefaultValues);
-
-    closeAddTodoDialog();
-  };
-  // const formatDueDate = (dueDate: Date | null) => {
-  // };
-
-  /**
-   * Edit Todo
-   */
-  const opeEditTodoDialog = ({
-    itemId,
-    subItemId,
-    todo,
-  }: {
-    itemId: string;
-    subItemId?: string;
-    todo: Todo;
-  }) => {
-    setEditTodoDialog(true);
-    setNewTodo({
-      ...todo,
-      itemId: itemId,
-      subItemId: subItemId ? subItemId : null,
-    });
-  };
   const closeEditTodoDialog = () => {
     setEditTodoDialog(false);
     setNewTodo(newTodoDefaultValues);
   };
   const handleClickUpdateTodoButton = () => {
-    const item: any = items.find((item: any) => item["_id"] === newTodo.itemId);
+    const item = items.find((item: Item) => item["_id"] === newTodo.itemId);
+    if (!item) return;
     const newItem = { ...item };
-    const subItem: any = newTodo.subItemId
+    const subItem = newTodo.subItemId
       ? item.subItems.find(
-          (subItem: any) => subItem["_id"] === newTodo.subItemId
+          (subItem: SubItem) => subItem["_id"] === newTodo.subItemId
         )
       : null;
     const newSubItem = subItem ? { ...subItem } : subItem;
@@ -319,13 +204,14 @@ const MeasuredItems = () => {
       dueDate:
         newTodo.dueDate !== null ? new Date(newTodo.dueDate).getTime() : null,
       finishedDate: null,
-    }; // new object
+    };
 
     let newTodos = [],
       newItems = [],
       newSubItems = [];
 
     if (!newTodo.subItemId) {
+      if (!item.todos) return;
       newTodos = updateListOfObjects({
         listOfObjects: [...item.todos],
         newObject: newTodoObj,
@@ -336,6 +222,7 @@ const MeasuredItems = () => {
       newItem.todos = newTodos;
     }
     if (newTodo.subItemId) {
+      if (!newSubItem || !subItem || !subItem.todos) return;
       newTodos = updateListOfObjects({
         listOfObjects: [...subItem.todos],
         newObject: newTodoObj,
@@ -362,108 +249,7 @@ const MeasuredItems = () => {
     updateMeasuredItem(user.uid, newItems);
     setNewTodo(newTodoDefaultValues);
 
-    // if (newTodo.subItemId) {
-    //   const subItem: any = item.subItems.find(
-    //     (item: any) => item["_id"] === newTodo.subItemId
-    //   );
-    // }
     closeEditTodoDialog();
-  };
-
-  /**
-   * 操作 Todo
-   */
-  const updateTodoStatus = ({
-    itemId,
-    subItemId,
-    todoId,
-    statusToBe,
-  }: {
-    itemId: string;
-    subItemId?: string;
-    todoId: string;
-    statusToBe: "IN_PROGRESS" | "FINISHED";
-  }) => {
-    console.log(itemId, subItemId, todoId);
-    const item: any = items.find((item: any) => item["_id"] === itemId);
-    const newItem = { ...item };
-
-    let newItems;
-    if (!subItemId) {
-      console.log("AA");
-      const todos = [...item.todos];
-      const targetTodo: todo = todos.find(
-        (todo: todo) => todo["_id"] === todoId
-      );
-
-      const newTodo = {
-        ...targetTodo,
-        status: statusToBe,
-        finishedDate:
-          statusToBe === "IN_PROGRESS" ? null : new Date().getTime(),
-      };
-
-      const newTodos = updateListOfObjects({
-        listOfObjects: todos,
-        newObject: newTodo,
-        filter: { key: "_id", value: newTodo._id },
-        processType: "REPLACE",
-      });
-
-      newItem.todos = newTodos;
-    }
-    if (subItemId) {
-      console.log("BB");
-      const subItem: any = item.subItems.find(
-        (subItem: any) => subItem["_id"] === subItemId
-      );
-
-      const todos = [...subItem.todos];
-      const targetTodo: todo = todos.find(
-        (todo: todo) => todo["_id"] === todoId
-      );
-      const newTodo = {
-        ...targetTodo,
-        status: statusToBe,
-        finishedDate:
-          statusToBe === "IN_PROGRESS" ? null : new Date().getTime(),
-      };
-      const newTodos = updateListOfObjects({
-        listOfObjects: todos,
-        newObject: newTodo,
-        filter: { key: "_id", value: newTodo._id },
-        processType: "REPLACE",
-      });
-      newItem.subItems = item.subItems.map((x: any) => {
-        return x._id === subItem._id ? { ...x, todos: newTodos } : x;
-      });
-      console.log("newItem", newItem);
-    }
-    newItems = updateListOfObjects({
-      listOfObjects: [...items],
-      newObject: newItem,
-      filter: { key: "_id", value: item._id },
-      processType: "REPLACE",
-    });
-    console.log("newItems", newItems);
-
-    updateMeasuredItem(user.uid, newItems);
-    setNewTodo(newTodoDefaultValues);
-
-    if (measure.measuringItem.todoId === todoId) {
-      const newMeasuringItem = stoppedMeasuringItem();
-
-      const newTime = createNewTime(measure.measuringItem);
-
-      const newMeasure = {
-        measuringItem: newMeasuringItem,
-        times: [...measure.times, newTime],
-      };
-      setMeasure(newMeasure);
-      const tmpMonth = "202112";
-      console.log("newMeasure", newMeasure);
-      updateMeasuredTime(user.uid, tmpMonth, newMeasure);
-    }
   };
 
   /**
@@ -510,7 +296,7 @@ const MeasuredItems = () => {
   const editModeToggle = () => {
     setEditMode(!editMode);
   };
-  const handleClickEditIcon = (item: any): void => {
+  const handleClickEditIcon = (item: Item): void => {
     setTargetItem(item);
     openEditDialog();
   };
@@ -519,24 +305,28 @@ const MeasuredItems = () => {
   };
   const closeEditDialog = () => {
     setEditDialog(false);
-    setTargetItem({});
+    setTargetItem(null);
   };
   const handleDeleteSubItem = (subItemId: string) => {
+    if (!targetItem) return;
     let newSubItems = [...targetItem.subItems];
-    let obj = newSubItems.find((x: any) => x["_id"] === subItemId);
+    let obj = newSubItems.find((x: SubItem) => x["_id"] === subItemId);
+    if (!obj) return;
     let index = newSubItems.indexOf(obj);
     newSubItems.splice(index, 1); // 削除
     setTargetItem({ ...targetItem, subItems: newSubItems });
   };
-  const handleOnChangeTargetItem = (e: any): void => {
-    if (e.target.name === "itemName") {
-      setTargetItem({ ...targetItem, name: e.target.value });
+  const handleOnChangeTargetItem = (event: any): void => {
+    const newValue = event.target.value;
+    if (!targetItem) return;
+    if (event.target.name === "itemName") {
+      setTargetItem({ ...targetItem, name: newValue });
       return;
     }
-    if (e.target.name.substring(0, 8) === "subItems") {
+    if (event.target.name.substring(0, 8) === "subItems") {
       const newSubItems = targetItem.subItems.map((subItem: any) => {
-        if (subItem._id === e.target.id) {
-          return { ...subItem, name: e.target.value };
+        if (subItem._id === event.target.id) {
+          return { ...subItem, name: newValue };
         } else {
           return subItem;
         }
@@ -545,18 +335,20 @@ const MeasuredItems = () => {
       setTargetItem({ ...targetItem, subItems: newSubItems });
       return;
     }
-    if (e.target.name === "newSubItem") {
-      setTargetItem({ ...targetItem, newSubItem: e.target.value });
+    if (event.target.name === "newSubItem") {
+      setTargetItem({ ...targetItem, newSubItem: newValue });
       return;
     }
-    if (e.target.name === "color") {
-      setTargetItem({ ...targetItem, color: e.target.value });
+    if (event.target.name === "color") {
+      setTargetItem({ ...targetItem, color: newValue });
       return;
     }
   };
   const handleUpdateItem = () => {
+    if (!targetItem) return;
     const newItems = [...items];
-    let obj: any = newItems.find((x: Item) => x["_id"] === targetItem["_id"]);
+    let obj = newItems.find((x: Item) => x["_id"] === targetItem["_id"]);
+    if (!obj) return;
     let index = newItems.indexOf(obj);
 
     let newItem = { ...targetItem };
@@ -581,9 +373,8 @@ const MeasuredItems = () => {
     newItems.splice(index, 1, newItem);
 
     updateMeasuredItem(user.uid, newItems);
-    setTargetItem({});
+    setTargetItem(null);
     closeEditDialog();
-    closeNoteDialog();
   };
 
   /**
@@ -591,7 +382,7 @@ const MeasuredItems = () => {
    * @param _id
    */
   // ストップ
-  function stoppedMeasuringItem() {
+  function stoppedMeasuringItem(): MeasuringItem {
     return {
       isActive: false,
       _id: null,
@@ -601,60 +392,83 @@ const MeasuredItems = () => {
       todoId: null,
     };
   }
+  type Option = {
+    subItemId: string | null;
+    subItemName: string | null | undefined;
+    todoId: string | null;
+    todoDescription: string | null | undefined;
+  };
+  function startedMeasuringItem(
+    itemId: string,
+    itemName: string,
+    option?: Option
+  ): MeasuringItem {
+    let measuringItem: MeasuringItem = {
+      isActive: false,
+      _id: null,
+      start: null,
+      name: null,
+    };
+    measuringItem.isActive = true;
+
+    measuringItem["_id"] = itemId;
+    measuringItem.start = new Date().getTime();
+    measuringItem.name = itemName; // clickedItem.name;
+
+    if (option?.subItemId) {
+      measuringItem.subItemId = option.subItemId;
+      measuringItem.subItemName = option.subItemName; // clickedSubItem.name;
+    } else {
+      measuringItem.subItemId = null;
+    }
+    if (option?.todoId) {
+      measuringItem.todoId = option.todoId;
+      measuringItem.todoDescription = option.todoDescription; // clickedTodo.description;
+    } else {
+      measuringItem.todoId = null;
+    }
+    console.log(measuringItem);
+    return measuringItem;
+  }
   const handleClickItem = ({
     itemId,
-    subItemId,
-    todoId,
+    subItemId = null,
+    todoId = null,
   }: {
     itemId: string;
     subItemId?: string | null;
     todoId?: string | null;
   }): void => {
-    if (todoId) console.log(todoId);
-    console.log("subItemId", subItemId);
-    if (subItemId === undefined) subItemId = null;
-    if (todoId === undefined) todoId = null;
-    const clickedItem: any = items.find((item: any) => item["_id"] === itemId);
-    const clickedSubItem: any = subItemId
-      ? clickedItem.subItems.find((item: any) => item["_id"] === subItemId)
+    const clickedItem = items.find((item: Item) => item["_id"] === itemId);
+    if (!clickedItem) return;
+
+    const clickedSubItem = subItemId
+      ? clickedItem.subItems.find((item: SubItem) => item["_id"] === subItemId)
       : null;
-    const clickedTodo: any = todoId
+
+    const clickedTodo = todoId
       ? subItemId
-        ? clickedSubItem.todos.find((todo: any) => todo["_id"] === todoId)
-        : clickedItem.todos.find((todo: any) => todo["_id"] === todoId)
+        ? clickedSubItem?.todos?.find((todo: Todo) => todo["_id"] === todoId)
+        : clickedItem?.todos?.find((todo: Todo) => todo["_id"] === todoId)
       : null;
-    const measuringItem: any = {};
-
-    // スタート
-    function startMeasuringItem(): void {
-      measuringItem.isActive = true;
-
-      measuringItem["_id"] = itemId;
-      measuringItem.start = new Date().getTime();
-      measuringItem.name = clickedItem.name;
-
-      if (subItemId) {
-        measuringItem.subItemId = subItemId;
-        measuringItem.subItemName = clickedSubItem.name;
-      } else {
-        measuringItem.subItemId = null;
-      }
-      if (todoId) {
-        measuringItem.todoId = todoId;
-        measuringItem.todoDescription = clickedTodo.description;
-      } else {
-        measuringItem.todoId = null;
-      }
-      console.log(measuringItem);
-    }
 
     let newMeasure: any = {};
 
     if (!measure.measuringItem.isActive) {
       // アイテムクリック時（何も計測されていない状態）
-      startMeasuringItem();
+      const option = {
+        subItemId,
+        subItemName: clickedSubItem?.name,
+        todoId,
+        todoDescription: clickedTodo?.description,
+      };
+      const newMeasuringItem = startedMeasuringItem(
+        itemId,
+        clickedItem.name,
+        option
+      );
 
-      newMeasure = { ...measure, measuringItem: measuringItem };
+      newMeasure = { ...measure, measuringItem: newMeasuringItem };
       setMeasure(newMeasure);
 
       const tmpMonth = "202112";
@@ -686,12 +500,23 @@ const MeasuredItems = () => {
       ) {
         // 　別のアイテムをクリックして違うアイテムの計測を開始するとき
         console.log("B");
-        startMeasuringItem();
+        // startMeasuringItem();
+        const option = {
+          subItemId,
+          subItemName: clickedSubItem?.name,
+          todoId,
+          todoDescription: clickedTodo?.description,
+        };
+        const newMeasuringItem = startedMeasuringItem(
+          itemId,
+          clickedItem.name,
+          option
+        );
 
         const newTime = createNewTime(measure.measuringItem);
 
         newMeasure = {
-          measuringItem: measuringItem,
+          measuringItem: newMeasuringItem,
           times: [...measure.times, newTime],
         };
         setMeasure(newMeasure);
@@ -714,10 +539,10 @@ const MeasuredItems = () => {
 
       if (!subItemId) {
         const todos = [...item.todos];
-        const targetTodo: todo = todos.find(
-          (todo: todo) => todo["_id"] === todoId
+        const targetTodo: Todo = todos.find(
+          (todo: Todo) => todo["_id"] === todoId
         );
-        const newTodo: todo = {
+        const newTodo: Todo = {
           ...targetTodo,
           status: "IN_PROGRESS",
         };
@@ -735,10 +560,10 @@ const MeasuredItems = () => {
         );
         const newSubItem = { ...subItem };
         const todos = [...subItem.todos];
-        const targetTodo: todo = todos.find(
-          (todo: todo) => todo["_id"] === todoId
+        const targetTodo: Todo = todos.find(
+          (todo: Todo) => todo["_id"] === todoId
         );
-        const newTodo: todo = {
+        const newTodo: Todo = {
           ...targetTodo,
           status: "IN_PROGRESS",
         };
@@ -783,114 +608,8 @@ const MeasuredItems = () => {
     updateMeasuredItem(user.uid, newItems);
   };
 
-  /**
-   * ノート機能
-   */
-  const openNoteDialog = () => {
-    setNoteEditDialog(true);
-  };
-  const closeNoteDialog = () => {
-    setNoteEditDialog(false);
-  };
-  const handleClickEmptyNote = (item: any): void => {
-    openNoteDialog();
-    setTargetItem(item);
-  };
-  const handleOnChangeNote = (e: any) => {
-    setTargetItem({ ...targetItem, note: e.target.value });
-  };
   return (
     <>
-      {/* Todo追加フォーム */}
-      <Dialog open={addTodoDialog} onClose={closeAddTodoDialog} fullWidth>
-        <DialogTitle>Todoの追加</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            「{`${newTodo.itemName}`}
-            {newTodo.subItemName && ` > ${newTodo.subItemName}`}」
-            へTodoを追加しよう！！
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            name="newTodoDescription"
-            label="タイトル"
-            type="text"
-            fullWidth
-            variant="standard"
-            value={newTodo.description}
-            onChange={handleChangeNewTodo}
-            required
-          />
-          <Box sx={{ py: 1 }}>
-            <LocalizationProvider
-              name="startTime"
-              dateAdapter={DateAdapterMoment as any}
-            >
-              <DatePicker
-                // minDate={new Date().getTime()} // TODO 設定する 2021/12/19
-                label="期日"
-                value={newTodo.dueDate}
-                onChange={(value) => {
-                  setNewTodo({
-                    ...newTodo,
-                    dueDate: value,
-                  });
-                }}
-                renderInput={(params) => <TextField {...params} />}
-              />
-            </LocalizationProvider>
-          </Box>
-          このタスクにおける見積時間
-          <Box sx={{ py: 1 }} display="flex" alignItems="center">
-            <FormControl variant="standard" sx={{ p: 1, width: 50 }}>
-              <TextField
-                type="text"
-                variant="standard"
-                value={newTodo.estimatedTime}
-                disabled
-              />
-            </FormControl>
-            <FormControl variant="standard" sx={{ p: 1 }}>
-              <Select
-                name="unit"
-                value={newTodo?.unit}
-                onChange={changeTodoTimeUnit}
-              >
-                {(() => {
-                  const menuItems: any = [];
-                  Object.keys(todoUnits).forEach((key) => {
-                    menuItems.push(
-                      <MenuItem key={key} value={key}>
-                        {todoUnits[key]}
-                      </MenuItem>
-                    );
-                  });
-                  return menuItems;
-                })()}
-              </Select>
-            </FormControl>
-          </Box>
-          <Box sx={{ py: 1 }}>
-            時間
-            <Slider
-              aria-label="todoTime"
-              onChange={handleChangeNewTodoTimeSlider}
-              value={timeSliderValue(newTodo.estimatedTime)}
-              step={todoTimeConfig(newTodo.unit, "step")}
-              min={todoTimeConfig(newTodo.unit, "min")}
-              max={todoTimeConfig(newTodo.unit, "max")}
-              marks
-              valueLabelDisplay="auto"
-            />
-          </Box>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeAddTodoDialog}>戻る</Button>
-          <Button onClick={handleClickAddNewTodoButton}>追加</Button>
-        </DialogActions>
-      </Dialog>
-
       {/* Todo編集フォーム */}
       <Dialog open={editTodoDialog} onClose={closeEditTodoDialog} fullWidth>
         <DialogTitle>Todoの編集</DialogTitle>
@@ -1106,38 +825,12 @@ const MeasuredItems = () => {
         <DialogTitle>注意</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {`「${targetItem.name}」を削除します。よろしいですか？`}
+            {`「${targetItem?.name}」を削除します。よろしいですか？`}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDeleteDialog}>いいえ</Button>
           <Button onClick={handleDeleteItem}>はい</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* ノート機能 */}
-      <Dialog open={noteEditDialog} onClose={closeNoteDialog} fullWidth>
-        <DialogTitle>{targetItem?.name}のノート</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            ノートやTodoとしてメモしておきたいことを追加しよう！
-          </DialogContentText>
-          <TextField
-            margin="dense"
-            id="note"
-            label="ノート"
-            type="text"
-            fullWidth
-            multiline
-            rows={10}
-            variant="filled"
-            value={targetItem?.note}
-            onChange={handleOnChangeNote}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeNoteDialog}>戻る</Button>
-          <Button onClick={handleUpdateItem}>更新</Button>
         </DialogActions>
       </Dialog>
 
@@ -1179,7 +872,7 @@ const MeasuredItems = () => {
       )}
 
       {/* アイテム一覧表示 */}
-      {items?.map((item: any, index: number) => {
+      {items?.map((item: Item, index: number) => {
         const _id = item["_id"];
         const baseTime = 60 * 5; // 1日5時間同じ事やってればすごいということで。（なんとなく）
         const totalTime = totalTimes[_id]?.sum
@@ -1208,20 +901,8 @@ const MeasuredItems = () => {
             >
               {/* アイテム表示 */}
               <Grid item xs={12} sx={{ display: "flex" }}>
-                <IconButton onClick={() => handleClickEmptyNote(item)}>
-                  {item.note ? (
-                    <DescriptionIcon />
-                  ) : (
-                    <InsertDriveFileOutlinedIcon />
-                  )}
-                </IconButton>
-                <IconButton
-                  onClick={() => {
-                    openAddTodoDialog(item._id);
-                  }}
-                >
-                  <AddTaskOutlinedIcon />
-                </IconButton>
+                <NoteIcon item={item} />
+                <AddTodoIconComponent itemId={item._id} />
                 <Button
                   variant={isActive ? "outlined" : "contained"}
                   onClick={
@@ -1249,10 +930,6 @@ const MeasuredItems = () => {
                     : `${minutesToHoursDisplay(
                         totalTimeItem
                       )}/${minutesToHoursDisplay(totalTime)}`}
-
-                  {/* <IconButton size="small">
-                    <MoreVertIcon />
-                  </IconButton> */}
                 </Button>
                 {!editMode && (
                   <IconButton
@@ -1276,151 +953,14 @@ const MeasuredItems = () => {
               {/* Todo表示 */}
               {!editMode &&
                 item.expandSubItems &&
-                item.todos?.map((todo: Todo, index: number) => {
-                  // if (todo.finishedDate === null) return null;
-                  if (
-                    (todo.finishedDate === null
-                      ? true
-                      : todo.finishedDate >= new Date().setHours(0, 0, 0) &&
-                        todo.status === "FINISHED") ||
-                    todo.status !== "FINISHED"
-                  ) {
-                    return (
-                      <Grid
-                        container
-                        key={index}
-                        sx={{
-                          my: 1,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "right",
-                        }}
-                      >
-                        <Grid
-                          item
-                          xs={10}
-                          sx={{
-                            display: "flex",
-                            alignItems: "center",
-                            mb: 1,
-                          }}
-                        >
-                          {todo.status === "FINISHED" ? (
-                            <IconButton
-                              onClick={() => {
-                                updateTodoStatus({
-                                  itemId: item._id,
-                                  todoId: todo._id,
-                                  statusToBe: "IN_PROGRESS",
-                                });
-                              }}
-                            >
-                              <CheckIcon />
-                            </IconButton>
-                          ) : (
-                            <IconButton
-                              onClick={() => {
-                                updateTodoStatus({
-                                  itemId: item._id,
-                                  todoId: todo._id,
-                                  statusToBe: "FINISHED",
-                                });
-                              }}
-                            >
-                              <CircleOutlinedIcon />
-                            </IconButton>
-                          )}
-                          <Button
-                            variant="text"
-                            sx={{
-                              flexGrow: 1,
-                              textDecoration:
-                                todo.status === "FINISHED"
-                                  ? "line-through"
-                                  : "",
-                            }}
-                            onClick={() => {
-                              opeEditTodoDialog({ itemId: item._id, todo });
-                            }}
-                          >
-                            <Typography
-                              textAlign="left"
-                              sx={{
-                                flexGrow: 1,
-                                color:
-                                  measure.measuringItem.todoId === todo._id
-                                    ? "red"
-                                    : "",
-                              }}
-                            >
-                              {todo.description}
-                            </Typography>
-                            <Typography textAlign="right">
-                              {totalTimes[todo._id] &&
-                                `${minutesToHoursDisplay(
-                                  totalTimes[todo._id] / 60
-                                )}/`}
-                            </Typography>
-                            {todo.estimatedTime !== 0 && (
-                              <Typography textAlign="right">
-                                {todo.estimatedTime}
-                                {todoUnits[todo.unit]}
-                              </Typography>
-                            )}
-                            {todo.finishedDate && (
-                              <Typography
-                                textAlign="right"
-                                sx={{ pl: 1, color: "red" }}
-                              >
-                                {formatDate(todo.finishedDate, "M/D")}
-                              </Typography>
-                            )}
-                            {todo.dueDate && (
-                              <Typography textAlign="right" sx={{ pl: 1 }}>
-                                {formatDate(todo.dueDate, "M/D")}
-                              </Typography>
-                            )}
-                          </Button>
-                          {todo.status !== "FINISHED" ? (
-                            measure.measuringItem.todoId === todo._id ? (
-                              <IconButton
-                                onClick={() =>
-                                  handleClickItem({
-                                    itemId: item._id,
-                                    todoId: todo._id,
-                                  })
-                                }
-                              >
-                                <StopCircleOutlinedIcon />
-                              </IconButton>
-                            ) : (
-                              <IconButton
-                                onClick={() =>
-                                  handleClickItem({
-                                    itemId: item._id,
-                                    todoId: todo._id,
-                                  })
-                                }
-                              >
-                                <PlayCircleOutlinedIcon />
-                              </IconButton>
-                            )
-                          ) : null}
-
-                          {/* 同じ幅を保つために同じエレメントを非表示で作成。 */}
-                          <IconButton sx={{ visibility: "hidden" }}>
-                            <ExpandMoreOutlinedIcon />
-                          </IconButton>
-                        </Grid>
-                      </Grid>
-                    );
-                  }
-                })}
+                item.todos?.map((todo: Todo, index: number) => (
+                  <TodoItem key={index} todo={todo} itemId={item._id} />
+                ))}
 
               {/* サブアイテム表示 */}
               {!editMode &&
                 item.expandSubItems &&
-                item.subItems?.map((subItem: any, index: number) => {
+                item.subItems?.map((subItem: SubItem, index: number) => {
                   const subItemId = subItem["_id"];
                   const baseTime = 60 * 5; // 1日5時間同じ事やってればすごいということで。（なんとなく）
 
@@ -1441,13 +981,10 @@ const MeasuredItems = () => {
                     >
                       {/* サブアイテム */}
                       <Grid item xs={10} sx={{ display: "flex" }}>
-                        <IconButton
-                          onClick={() => {
-                            openAddTodoDialog(item._id, subItemId);
-                          }}
-                        >
-                          <CheckCircleOutlineIcon />
-                        </IconButton>
+                        <AddTodoIconComponent
+                          itemId={item._id}
+                          subItemId={subItem._id}
+                        />
                         <Button
                           variant={
                             measure.measuringItem?.["subItemId"] === subItemId
@@ -1485,153 +1022,14 @@ const MeasuredItems = () => {
 
                       {/* Todo表示 */}
                       {subItem.todos?.map((todo: Todo, index: number) => {
-                        // if (todo.finishedDate === null) return null;
-                        if (
-                          (todo.finishedDate === null
-                            ? true
-                            : todo.finishedDate >=
-                                new Date().setHours(0, 0, 0) &&
-                              todo.status === "FINISHED") ||
-                          // 完了時刻が今日の完了済みTODO or
-                          todo.status !== "FINISHED"
-                          // 完了してないTODO
-                        ) {
-                          return (
-                            <Grid
-                              container
-                              key={index}
-                              sx={{
-                                my: 1,
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "right",
-                              }}
-                            >
-                              <Grid
-                                item
-                                xs={10}
-                                sx={{
-                                  display: "flex",
-                                  alignItems: "center",
-                                  mb: 1,
-                                }}
-                              >
-                                {todo.status === "FINISHED" ? (
-                                  <IconButton
-                                    onClick={() => {
-                                      updateTodoStatus({
-                                        itemId: item._id,
-                                        subItemId: subItem._id,
-                                        todoId: todo._id,
-                                        statusToBe: "IN_PROGRESS",
-                                      });
-                                    }}
-                                  >
-                                    <CheckIcon />
-                                  </IconButton>
-                                ) : (
-                                  <IconButton
-                                    onClick={() => {
-                                      updateTodoStatus({
-                                        itemId: item._id,
-                                        subItemId: subItem._id,
-                                        todoId: todo._id,
-                                        statusToBe: "FINISHED",
-                                      });
-                                    }}
-                                  >
-                                    <CircleOutlinedIcon />
-                                  </IconButton>
-                                )}
-                                <Button
-                                  variant="text"
-                                  sx={{
-                                    flexGrow: 1,
-                                    textDecoration:
-                                      todo.status === "FINISHED"
-                                        ? "line-through"
-                                        : "",
-                                  }}
-                                  onClick={() => {
-                                    opeEditTodoDialog({
-                                      itemId: item._id,
-                                      subItemId: subItem._id,
-                                      todo,
-                                    });
-                                  }}
-                                >
-                                  <Typography
-                                    textAlign="left"
-                                    sx={{
-                                      flexGrow: 1,
-                                      color:
-                                        measure.measuringItem.todoId ===
-                                        todo._id
-                                          ? "red"
-                                          : "",
-                                    }}
-                                  >
-                                    {todo.description}
-                                  </Typography>
-                                  {todo.estimatedTime !== 0 && (
-                                    <Typography textAlign="right">
-                                      {todo.estimatedTime}
-                                      {todoUnits[todo.unit]}
-                                    </Typography>
-                                  )}
-                                  {todo.finishedDate && (
-                                    <Typography
-                                      textAlign="right"
-                                      sx={{ pl: 1, color: "red" }}
-                                    >
-                                      {formatDate(todo.finishedDate, "M/D")}
-                                    </Typography>
-                                  )}
-                                  {todo.dueDate && (
-                                    <Typography
-                                      textAlign="right"
-                                      sx={{ pl: 1 }}
-                                    >
-                                      {formatDate(todo.dueDate, "M/D")}
-                                    </Typography>
-                                  )}
-                                </Button>
-                                {todo.status !== "FINISHED" ? (
-                                  measure.measuringItem.todoId === todo._id ? (
-                                    <IconButton
-                                      onClick={() =>
-                                        handleClickItem({
-                                          itemId: item._id,
-                                          subItemId: subItem._id,
-                                          todoId: todo._id,
-                                        })
-                                      }
-                                    >
-                                      <StopCircleOutlinedIcon />
-                                    </IconButton>
-                                  ) : (
-                                    <IconButton
-                                      onClick={() =>
-                                        handleClickItem({
-                                          itemId: item._id,
-                                          subItemId: subItem._id,
-                                          todoId: todo._id,
-                                        })
-                                      }
-                                    >
-                                      <PlayCircleOutlinedIcon />
-                                    </IconButton>
-                                  )
-                                ) : null}
-
-                                {/* 同じ幅を保つために同じエレメントを非表示で作成。 */}
-                                <IconButton sx={{ visibility: "hidden" }}>
-                                  <ExpandMoreOutlinedIcon />
-                                </IconButton>
-                              </Grid>
-                            </Grid>
-                          );
-                        }
+                        return (
+                          <TodoItem
+                            key={index}
+                            todo={todo}
+                            itemId={item._id}
+                            subItemId={subItem._id}
+                          />
+                        );
                       })}
                     </Grid>
                   );
