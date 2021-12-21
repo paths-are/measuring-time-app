@@ -42,21 +42,23 @@ import {
   Item,
   SubItem,
   MeasuredItems as Items,
+  MeasuringItem,
+  Time,
 } from "@/src/recoilAtoms";
 
 import InputLabel from "@mui/material/InputLabel";
 import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
-import Select from "@mui/material/Select";
+import Select, { SelectChangeEvent } from "@mui/material/Select";
 
 import LocalizationProvider from "@mui/lab/LocalizationProvider";
 import DateAdapterMoment from "@mui/lab/AdapterMoment";
 import DatePicker from "@mui/lab/DatePicker";
 import Slider from "@mui/material/Slider";
 
-function createNewTime(measuringItem: any) {
-  let newTime: any = {};
-  newTime = {
+function createNewTime(measuringItem: MeasuringItem): Time | void {
+  if (!measuringItem._id || !measuringItem.start) return;
+  let newTime: Time = {
     itemId: measuringItem["_id"],
     _id: `time_${uuidv4()}`,
     start: measuringItem.start,
@@ -83,31 +85,21 @@ const MeasuredItems = () => {
   const [newDialog, setNewDialog] = React.useState(false);
   const [deleteDialog, setDeleteDialog] = React.useState(false);
   const [editDialog, setEditDialog] = React.useState(false);
-  const [targetItem, setTargetItem] = React.useState<any>({});
+  type TargetItem = Item & {
+    newSubItem?: string | null;
+  };
+  const [targetItem, setTargetItem] = React.useState<TargetItem | null>(null);
   const totalTimes = useRecoilValue(totalTimesAtom);
   const [editMode, setEditMode] = React.useState(false);
   const [noteEditDialog, setNoteEditDialog] = React.useState(false);
   const [addTodoDialog, setAddTodoDialog] = React.useState(false);
-  type todo = {
-    itemId?: string;
-    itemName?: string;
-    subItemId?: string | null;
-    subItemName?: string | null;
-    _id: string;
-    description: string | null;
-    estimatedTime: number | null;
-    unit: "MINUTES" | "HOURS" | "PERSON_DAY";
-    status: "NOT_STARTED" | "IN_PROGRESS" | "FINISHED";
-    dueDate: Date | null;
-    finishedDate: Date | null;
-  };
   type ClientTodo = Todo & {
-    itemId?: string;
-    itemName?: string;
-    subItemId?: string | null;
-    subItemName?: string | null;
-    dueDate: Date | number | null;
-    finishedDate: Date | number | null;
+    itemId?: string; // 追加
+    itemName?: string; // 追加
+    subItemId?: string | null; // 追加
+    subItemName?: string | null; // 追加
+    dueDate: Date | number | null; // 上書き
+    finishedDate?: Date | number | null; // 上書き
   };
   const newTodoDefaultValues: ClientTodo = {
     itemId: "",
@@ -145,12 +137,12 @@ const MeasuredItems = () => {
   /**
    * 新規Todo追加
    */
-  const openAddTodoDialog = (itemId: string, subItemId?: string) => {
+  const openAddTodoDialog = (itemId: string, subItemId?: string): void => {
     setAddTodoDialog(true);
-    const item: any = items.find((item: Item) => item["_id"] === itemId);
-    console.log(item);
-    const subItem: any = subItemId
-      ? item.subItems.find((item: SubItem) => item["_id"] === subItemId)
+    const item = items.find((item: Item) => item["_id"] === itemId);
+    if (!item) return;
+    const subItem = subItemId
+      ? item.subItems.find((subItem: SubItem) => subItem["_id"] === subItemId)
       : null;
     setNewTodo({
       ...newTodo,
@@ -164,12 +156,15 @@ const MeasuredItems = () => {
     setAddTodoDialog(false);
     setNewTodo(newTodoDefaultValues);
   };
-  const changeTodoTimeUnit = (e: any): void => {
-    const newUnit = e.target.value;
+  const changeTodoTimeUnit = (
+    event: SelectChangeEvent
+    // child?: object
+  ): void => {
+    const newUnit = event.target.value;
     if (!newUnit) return;
     setNewTodo({
       ...newTodo,
-      unit: newUnit,
+      unit: newUnit as "MINUTES" | "HOURS" | "PERSON_DAY",
       estimatedTime: 0,
     });
   };
@@ -218,7 +213,8 @@ const MeasuredItems = () => {
   const handleClickAddNewTodoButton = () => {
     console.log("newTodo", newTodo);
     console.log(items);
-    const item: any = items.find((item: any) => item["_id"] === newTodo.itemId);
+    const item = items.find((item: Item) => item["_id"] === newTodo.itemId);
+    if (!item) return;
 
     let newItems;
     const newTodoObj = {
@@ -229,7 +225,7 @@ const MeasuredItems = () => {
       status: newTodo.status,
       dueDate: newTodo.dueDate ? new Date(newTodo.dueDate).getTime() : null,
     };
-    const newItem: any = { ...item };
+    const newItem: Item = { ...item };
     if (!newTodo.subItemId) {
       // アイテムへのTODOの追加
       console.log("A");
@@ -249,34 +245,22 @@ const MeasuredItems = () => {
       // サブアイテムへのTODOの追加
       console.log("B");
       console.log("sub---");
-      // const subItem: any = item.subItems.find(
-      //   (item: any) => item["_id"] === newTodo.subItemId
-      // );
-      // const newSubItem: any = { ...subItem };
-      // const newTodos = subItem.todos
-      //   ? [...subItem.todos, newTodoObj]
-      //   : [newTodoObj];
-      // newSubItem.todos = newTodos;
 
-      const newSubItems = item.subItems.map((x: any) => {
-        return x._id === newTodo.subItemId
+      const newSubItems = item.subItems.map((x: SubItem) =>
+        x._id === newTodo.subItemId
           ? { ...x, todos: x.todos ? [...x.todos, newTodoObj] : [newTodoObj] }
-          : x;
-      });
-      newItems = items.map((x: any) => {
-        return x._id === newTodo.itemId ? { ...x, subItems: newSubItems } : x;
-      });
-      // newItem.subItems = newSubItems;
+          : x
+      );
+      newItems = items.map((x: Item) =>
+        x._id === newTodo.itemId ? { ...x, subItems: newSubItems } : x
+      );
       console.log(newItems);
     }
-    // return;
     updateMeasuredItem(user.uid, newItems);
     setNewTodo(newTodoDefaultValues);
 
     closeAddTodoDialog();
   };
-  // const formatDueDate = (dueDate: Date | null) => {
-  // };
 
   /**
    * Edit Todo
@@ -302,11 +286,12 @@ const MeasuredItems = () => {
     setNewTodo(newTodoDefaultValues);
   };
   const handleClickUpdateTodoButton = () => {
-    const item: any = items.find((item: any) => item["_id"] === newTodo.itemId);
+    const item = items.find((item: Item) => item["_id"] === newTodo.itemId);
+    if (!item) return;
     const newItem = { ...item };
-    const subItem: any = newTodo.subItemId
+    const subItem = newTodo.subItemId
       ? item.subItems.find(
-          (subItem: any) => subItem["_id"] === newTodo.subItemId
+          (subItem: SubItem) => subItem["_id"] === newTodo.subItemId
         )
       : null;
     const newSubItem = subItem ? { ...subItem } : subItem;
@@ -319,13 +304,14 @@ const MeasuredItems = () => {
       dueDate:
         newTodo.dueDate !== null ? new Date(newTodo.dueDate).getTime() : null,
       finishedDate: null,
-    }; // new object
+    };
 
     let newTodos = [],
       newItems = [],
       newSubItems = [];
 
     if (!newTodo.subItemId) {
+      if (!item.todos) return;
       newTodos = updateListOfObjects({
         listOfObjects: [...item.todos],
         newObject: newTodoObj,
@@ -336,6 +322,7 @@ const MeasuredItems = () => {
       newItem.todos = newTodos;
     }
     if (newTodo.subItemId) {
+      if (!newSubItem || !subItem || !subItem.todos) return;
       newTodos = updateListOfObjects({
         listOfObjects: [...subItem.todos],
         newObject: newTodoObj,
@@ -362,11 +349,6 @@ const MeasuredItems = () => {
     updateMeasuredItem(user.uid, newItems);
     setNewTodo(newTodoDefaultValues);
 
-    // if (newTodo.subItemId) {
-    //   const subItem: any = item.subItems.find(
-    //     (item: any) => item["_id"] === newTodo.subItemId
-    //   );
-    // }
     closeEditTodoDialog();
   };
 
@@ -385,16 +367,18 @@ const MeasuredItems = () => {
     statusToBe: "IN_PROGRESS" | "FINISHED";
   }) => {
     console.log(itemId, subItemId, todoId);
-    const item: any = items.find((item: any) => item["_id"] === itemId);
+    const item = items.find((item: Item) => item["_id"] === itemId);
+    if (!item) return;
     const newItem = { ...item };
 
     let newItems;
     if (!subItemId) {
       console.log("AA");
+      if (!item.todos) return;
       const todos = [...item.todos];
-      const targetTodo: todo = todos.find(
-        (todo: todo) => todo["_id"] === todoId
-      );
+      const targetTodo = todos.find((todo: Todo) => todo["_id"] === todoId);
+
+      if (!targetTodo) return;
 
       const newTodo = {
         ...targetTodo,
@@ -414,14 +398,15 @@ const MeasuredItems = () => {
     }
     if (subItemId) {
       console.log("BB");
-      const subItem: any = item.subItems.find(
-        (subItem: any) => subItem["_id"] === subItemId
+      const subItem = item.subItems.find(
+        (subItem) => subItem["_id"] === subItemId
       );
+      if (!subItem) return;
+      if (!subItem.todos) subItem.todos = [];
 
       const todos = [...subItem.todos];
-      const targetTodo: todo = todos.find(
-        (todo: todo) => todo["_id"] === todoId
-      );
+      const targetTodo = todos.find((todo: Todo) => todo["_id"] === todoId);
+      if (!targetTodo) return;
       const newTodo = {
         ...targetTodo,
         status: statusToBe,
@@ -454,6 +439,7 @@ const MeasuredItems = () => {
       const newMeasuringItem = stoppedMeasuringItem();
 
       const newTime = createNewTime(measure.measuringItem);
+      if (!newTime) return;
 
       const newMeasure = {
         measuringItem: newMeasuringItem,
@@ -510,7 +496,7 @@ const MeasuredItems = () => {
   const editModeToggle = () => {
     setEditMode(!editMode);
   };
-  const handleClickEditIcon = (item: any): void => {
+  const handleClickEditIcon = (item: Item): void => {
     setTargetItem(item);
     openEditDialog();
   };
@@ -519,24 +505,28 @@ const MeasuredItems = () => {
   };
   const closeEditDialog = () => {
     setEditDialog(false);
-    setTargetItem({});
+    setTargetItem(null);
   };
   const handleDeleteSubItem = (subItemId: string) => {
+    if (!targetItem) return;
     let newSubItems = [...targetItem.subItems];
-    let obj = newSubItems.find((x: any) => x["_id"] === subItemId);
+    let obj = newSubItems.find((x: SubItem) => x["_id"] === subItemId);
+    if (!obj) return;
     let index = newSubItems.indexOf(obj);
     newSubItems.splice(index, 1); // 削除
     setTargetItem({ ...targetItem, subItems: newSubItems });
   };
-  const handleOnChangeTargetItem = (e: any): void => {
-    if (e.target.name === "itemName") {
-      setTargetItem({ ...targetItem, name: e.target.value });
+  const handleOnChangeTargetItem = (event: any): void => {
+    const newValue = event.target.value;
+    if (!targetItem) return;
+    if (event.target.name === "itemName") {
+      setTargetItem({ ...targetItem, name: newValue });
       return;
     }
-    if (e.target.name.substring(0, 8) === "subItems") {
+    if (event.target.name.substring(0, 8) === "subItems") {
       const newSubItems = targetItem.subItems.map((subItem: any) => {
-        if (subItem._id === e.target.id) {
-          return { ...subItem, name: e.target.value };
+        if (subItem._id === event.target.id) {
+          return { ...subItem, name: newValue };
         } else {
           return subItem;
         }
@@ -545,18 +535,20 @@ const MeasuredItems = () => {
       setTargetItem({ ...targetItem, subItems: newSubItems });
       return;
     }
-    if (e.target.name === "newSubItem") {
-      setTargetItem({ ...targetItem, newSubItem: e.target.value });
+    if (event.target.name === "newSubItem") {
+      setTargetItem({ ...targetItem, newSubItem: newValue });
       return;
     }
-    if (e.target.name === "color") {
-      setTargetItem({ ...targetItem, color: e.target.value });
+    if (event.target.name === "color") {
+      setTargetItem({ ...targetItem, color: newValue });
       return;
     }
   };
   const handleUpdateItem = () => {
+    if (!targetItem) return;
     const newItems = [...items];
-    let obj: any = newItems.find((x: Item) => x["_id"] === targetItem["_id"]);
+    let obj = newItems.find((x: Item) => x["_id"] === targetItem["_id"]);
+    if (!obj) return;
     let index = newItems.indexOf(obj);
 
     let newItem = { ...targetItem };
@@ -581,7 +573,7 @@ const MeasuredItems = () => {
     newItems.splice(index, 1, newItem);
 
     updateMeasuredItem(user.uid, newItems);
-    setTargetItem({});
+    setTargetItem(null);
     closeEditDialog();
     closeNoteDialog();
   };
@@ -591,7 +583,7 @@ const MeasuredItems = () => {
    * @param _id
    */
   // ストップ
-  function stoppedMeasuringItem() {
+  function stoppedMeasuringItem(): MeasuringItem {
     return {
       isActive: false,
       _id: null,
@@ -601,60 +593,83 @@ const MeasuredItems = () => {
       todoId: null,
     };
   }
+  type Option = {
+    subItemId: string | null;
+    subItemName: string | null | undefined;
+    todoId: string | null;
+    todoDescription: string | null | undefined;
+  };
+  function startedMeasuringItem(
+    itemId: string,
+    itemName: string,
+    option?: Option
+  ): MeasuringItem {
+    let measuringItem: MeasuringItem = {
+      isActive: false,
+      _id: null,
+      start: null,
+      name: null,
+    };
+    measuringItem.isActive = true;
+
+    measuringItem["_id"] = itemId;
+    measuringItem.start = new Date().getTime();
+    measuringItem.name = itemName; // clickedItem.name;
+
+    if (option?.subItemId) {
+      measuringItem.subItemId = option.subItemId;
+      measuringItem.subItemName = option.subItemName; // clickedSubItem.name;
+    } else {
+      measuringItem.subItemId = null;
+    }
+    if (option?.todoId) {
+      measuringItem.todoId = option.todoId;
+      measuringItem.todoDescription = option.todoDescription; // clickedTodo.description;
+    } else {
+      measuringItem.todoId = null;
+    }
+    console.log(measuringItem);
+    return measuringItem;
+  }
   const handleClickItem = ({
     itemId,
-    subItemId,
-    todoId,
+    subItemId = null,
+    todoId = null,
   }: {
     itemId: string;
     subItemId?: string | null;
     todoId?: string | null;
   }): void => {
-    if (todoId) console.log(todoId);
-    console.log("subItemId", subItemId);
-    if (subItemId === undefined) subItemId = null;
-    if (todoId === undefined) todoId = null;
-    const clickedItem: any = items.find((item: any) => item["_id"] === itemId);
-    const clickedSubItem: any = subItemId
-      ? clickedItem.subItems.find((item: any) => item["_id"] === subItemId)
+    const clickedItem = items.find((item: Item) => item["_id"] === itemId);
+    if (!clickedItem) return;
+
+    const clickedSubItem = subItemId
+      ? clickedItem.subItems.find((item: SubItem) => item["_id"] === subItemId)
       : null;
-    const clickedTodo: any = todoId
+
+    const clickedTodo = todoId
       ? subItemId
-        ? clickedSubItem.todos.find((todo: any) => todo["_id"] === todoId)
-        : clickedItem.todos.find((todo: any) => todo["_id"] === todoId)
+        ? clickedSubItem?.todos?.find((todo: Todo) => todo["_id"] === todoId)
+        : clickedItem?.todos?.find((todo: Todo) => todo["_id"] === todoId)
       : null;
-    const measuringItem: any = {};
-
-    // スタート
-    function startMeasuringItem(): void {
-      measuringItem.isActive = true;
-
-      measuringItem["_id"] = itemId;
-      measuringItem.start = new Date().getTime();
-      measuringItem.name = clickedItem.name;
-
-      if (subItemId) {
-        measuringItem.subItemId = subItemId;
-        measuringItem.subItemName = clickedSubItem.name;
-      } else {
-        measuringItem.subItemId = null;
-      }
-      if (todoId) {
-        measuringItem.todoId = todoId;
-        measuringItem.todoDescription = clickedTodo.description;
-      } else {
-        measuringItem.todoId = null;
-      }
-      console.log(measuringItem);
-    }
 
     let newMeasure: any = {};
 
     if (!measure.measuringItem.isActive) {
       // アイテムクリック時（何も計測されていない状態）
-      startMeasuringItem();
+      const option = {
+        subItemId,
+        subItemName: clickedSubItem?.name,
+        todoId,
+        todoDescription: clickedTodo?.description,
+      };
+      const newMeasuringItem = startedMeasuringItem(
+        itemId,
+        clickedItem.name,
+        option
+      );
 
-      newMeasure = { ...measure, measuringItem: measuringItem };
+      newMeasure = { ...measure, measuringItem: newMeasuringItem };
       setMeasure(newMeasure);
 
       const tmpMonth = "202112";
@@ -686,12 +701,23 @@ const MeasuredItems = () => {
       ) {
         // 　別のアイテムをクリックして違うアイテムの計測を開始するとき
         console.log("B");
-        startMeasuringItem();
+        // startMeasuringItem();
+        const option = {
+          subItemId,
+          subItemName: clickedSubItem?.name,
+          todoId,
+          todoDescription: clickedTodo?.description,
+        };
+        const newMeasuringItem = startedMeasuringItem(
+          itemId,
+          clickedItem.name,
+          option
+        );
 
         const newTime = createNewTime(measure.measuringItem);
 
         newMeasure = {
-          measuringItem: measuringItem,
+          measuringItem: newMeasuringItem,
           times: [...measure.times, newTime],
         };
         setMeasure(newMeasure);
@@ -714,10 +740,10 @@ const MeasuredItems = () => {
 
       if (!subItemId) {
         const todos = [...item.todos];
-        const targetTodo: todo = todos.find(
-          (todo: todo) => todo["_id"] === todoId
+        const targetTodo: Todo = todos.find(
+          (todo: Todo) => todo["_id"] === todoId
         );
-        const newTodo: todo = {
+        const newTodo: Todo = {
           ...targetTodo,
           status: "IN_PROGRESS",
         };
@@ -735,10 +761,10 @@ const MeasuredItems = () => {
         );
         const newSubItem = { ...subItem };
         const todos = [...subItem.todos];
-        const targetTodo: todo = todos.find(
-          (todo: todo) => todo["_id"] === todoId
+        const targetTodo: Todo = todos.find(
+          (todo: Todo) => todo["_id"] === todoId
         );
-        const newTodo: todo = {
+        const newTodo: Todo = {
           ...targetTodo,
           status: "IN_PROGRESS",
         };
@@ -796,8 +822,10 @@ const MeasuredItems = () => {
     openNoteDialog();
     setTargetItem(item);
   };
-  const handleOnChangeNote = (e: any) => {
-    setTargetItem({ ...targetItem, note: e.target.value });
+  const handleOnChangeNote = (event: any) => {
+    const newValue = event.target.value;
+    if (!newValue && targetItem)
+      setTargetItem({ ...targetItem, note: newValue });
   };
   return (
     <>
@@ -1106,7 +1134,7 @@ const MeasuredItems = () => {
         <DialogTitle>注意</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            {`「${targetItem.name}」を削除します。よろしいですか？`}
+            {`「${targetItem?.name}」を削除します。よろしいですか？`}
           </DialogContentText>
         </DialogContent>
         <DialogActions>
@@ -1179,7 +1207,7 @@ const MeasuredItems = () => {
       )}
 
       {/* アイテム一覧表示 */}
-      {items?.map((item: any, index: number) => {
+      {items?.map((item: Item, index: number) => {
         const _id = item["_id"];
         const baseTime = 60 * 5; // 1日5時間同じ事やってればすごいということで。（なんとなく）
         const totalTime = totalTimes[_id]?.sum
@@ -1279,7 +1307,8 @@ const MeasuredItems = () => {
                 item.todos?.map((todo: Todo, index: number) => {
                   // if (todo.finishedDate === null) return null;
                   if (
-                    (todo.finishedDate === null
+                    (todo.finishedDate === null ||
+                    todo.finishedDate === undefined
                       ? true
                       : todo.finishedDate >= new Date().setHours(0, 0, 0) &&
                         todo.status === "FINISHED") ||
@@ -1485,16 +1514,14 @@ const MeasuredItems = () => {
 
                       {/* Todo表示 */}
                       {subItem.todos?.map((todo: Todo, index: number) => {
-                        // if (todo.finishedDate === null) return null;
                         if (
-                          (todo.finishedDate === null
+                          (todo.finishedDate === null ||
+                          todo.finishedDate === undefined
                             ? true
                             : todo.finishedDate >=
                                 new Date().setHours(0, 0, 0) &&
                               todo.status === "FINISHED") ||
-                          // 完了時刻が今日の完了済みTODO or
                           todo.status !== "FINISHED"
-                          // 完了してないTODO
                         ) {
                           return (
                             <Grid

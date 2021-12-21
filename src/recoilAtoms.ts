@@ -7,12 +7,12 @@ export type Todo = {
   unit: "MINUTES" | "HOURS" | "PERSON_DAY";
   status: "NOT_STARTED" | "IN_PROGRESS" | "FINISHED";
   dueDate: number | null;
-  finishedDate: number | null;
+  finishedDate?: number | null;
 };
 export type SubItem = {
   _id: string;
   name: string;
-  todos: Todo[];
+  todos?: Todo[];
 };
 export type Item = {
   _id: string;
@@ -21,11 +21,11 @@ export type Item = {
   expandSubItems: boolean;
   name: string;
   note: string;
-  subItems: [SubItem];
-  todos?: [Todo];
+  subItems: SubItem[];
+  todos?: Todo[];
   isDelete?: boolean;
 };
-export type MeasuredItems = [Item] | [];
+export type MeasuredItems = Item[] | [];
 
 export const measuredItems = atom<MeasuredItems>({
   key: "measuredItems",
@@ -37,7 +37,7 @@ export const totalTimes = atom<any>({
   default: {},
 });
 
-type MeasuringItem = {
+export type MeasuringItem = {
   isActive: boolean;
   _id: string | null;
   name: string | null;
@@ -46,15 +46,17 @@ type MeasuringItem = {
   subItemId?: string | null;
   subItemName?: string | null;
   todoId?: string | null;
+  todoDescription?: string | null;
   memo?: string;
 };
-type Time = {
+export type Time = {
   _id: string;
   start: number;
   end: number;
   itemId: string;
   subItemId?: string;
   todoId?: string;
+  memo?: string;
 };
 export type Measure = {
   measuringItem: MeasuringItem;
