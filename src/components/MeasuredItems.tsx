@@ -1277,10 +1277,12 @@ const MeasuredItems = () => {
               {!editMode &&
                 item.expandSubItems &&
                 item.todos?.map((todo: Todo, index: number) => {
-                  if (todo.finishedDate === null) return null;
+                  // if (todo.finishedDate === null) return null;
                   if (
-                    (todo.finishedDate >= new Date().setHours(0, 0, 0) &&
-                      todo.status === "FINISHED") ||
+                    (todo.finishedDate === null
+                      ? true
+                      : todo.finishedDate >= new Date().setHours(0, 0, 0) &&
+                        todo.status === "FINISHED") ||
                     todo.status !== "FINISHED"
                   ) {
                     return (
@@ -1363,6 +1365,14 @@ const MeasuredItems = () => {
                               <Typography textAlign="right">
                                 {todo.estimatedTime}
                                 {todoUnits[todo.unit]}
+                              </Typography>
+                            )}
+                            {todo.finishedDate && (
+                              <Typography
+                                textAlign="right"
+                                sx={{ pl: 1, color: "red" }}
+                              >
+                                {formatDate(todo.finishedDate, "M/D")}
                               </Typography>
                             )}
                             {todo.dueDate && (
@@ -1475,10 +1485,13 @@ const MeasuredItems = () => {
 
                       {/* Todo表示 */}
                       {subItem.todos?.map((todo: Todo, index: number) => {
-                        if (todo.finishedDate === null) return null;
+                        // if (todo.finishedDate === null) return null;
                         if (
-                          (todo.finishedDate >= new Date().setHours(0, 0, 0) &&
-                            todo.status === "FINISHED") ||
+                          (todo.finishedDate === null
+                            ? true
+                            : todo.finishedDate >=
+                                new Date().setHours(0, 0, 0) &&
+                              todo.status === "FINISHED") ||
                           // 完了時刻が今日の完了済みTODO or
                           todo.status !== "FINISHED"
                           // 完了してないTODO
@@ -1564,6 +1577,14 @@ const MeasuredItems = () => {
                                     <Typography textAlign="right">
                                       {todo.estimatedTime}
                                       {todoUnits[todo.unit]}
+                                    </Typography>
+                                  )}
+                                  {todo.finishedDate && (
+                                    <Typography
+                                      textAlign="right"
+                                      sx={{ pl: 1, color: "red" }}
+                                    >
+                                      {formatDate(todo.finishedDate, "M/D")}
                                     </Typography>
                                   )}
                                   {todo.dueDate && (
