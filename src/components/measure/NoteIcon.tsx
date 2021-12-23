@@ -80,7 +80,7 @@ const NoteIcon = ({ item }: Props) => {
   };
   const handleOnChangeNote = (event: any) => {
     const newValue = event.target.value;
-    if (newValue && targetItem) {
+    if (targetItem) {
       setTargetItem({ ...targetItem, note: newValue });
     }
   };

@@ -49,6 +49,7 @@ import Slider from "@mui/material/Slider";
 import AddTodoIconComponent from "@/src/components/measure/AddTodoIcon";
 import TodoItem from "@/src/components/measure/TodoItem";
 import NoteIcon from "@/src/components/measure/NoteIcon";
+import AddItem from "@/src/components/measure/AddItem";
 
 function createNewTime(measuringItem: MeasuringItem): Time | void {
   if (!measuringItem._id || !measuringItem.start) return;
@@ -75,8 +76,6 @@ const MeasuredItems = () => {
   const [measure, setMeasure] = useRecoilState(measureAtom);
 
   const user: any = useUser();
-  const [newItem, setNewItem] = React.useState("");
-  const [newDialog, setNewDialog] = React.useState(false);
   const [deleteDialog, setDeleteDialog] = React.useState(false);
   const [editDialog, setEditDialog] = React.useState(false);
   type TargetItem = Item & {
@@ -253,29 +252,6 @@ const MeasuredItems = () => {
   };
 
   /**
-   * 新規アイテム追加
-   */
-  const openNewDialog = () => {
-    setNewDialog(true);
-  };
-  const closeNewDialog = () => {
-    setNewDialog(false);
-  };
-  const handleOnChange = (e: any): void => {
-    setNewItem(e.target.value);
-  };
-  const handleSendItem = () => {
-    closeNewDialog();
-    addMeasuredItem(user.uid, {
-      _id: uuidv4(),
-      name: newItem,
-      category: "work1",
-      color: "#3f51b5",
-    });
-    setNewItem("");
-  };
-
-  /**
    * Delete
    */
   const openDeleteDialog = () => {
@@ -427,7 +403,6 @@ const MeasuredItems = () => {
     } else {
       measuringItem.todoId = null;
     }
-    console.log(measuringItem);
     return measuringItem;
   }
   const handleClickItem = ({
@@ -473,7 +448,6 @@ const MeasuredItems = () => {
 
       const tmpMonth = "202112";
       const updateKey = "measuringItem";
-      console.log("newMeasure", newMeasure);
       updateMeasuredTime(user.uid, tmpMonth, newMeasure, updateKey);
     } else {
       // アイテムクリック時（計測されている状態）
@@ -483,7 +457,6 @@ const MeasuredItems = () => {
         measure.measuringItem?.["todoId"] === todoId
       ) {
         // 同じアイテムをクリックして停止するとき
-        console.log("A");
         const newMeasuringItem = stoppedMeasuringItem();
 
         const newTime = createNewTime(measure.measuringItem);
@@ -499,7 +472,6 @@ const MeasuredItems = () => {
         measure.measuringItem?.["todoId"] !== todoId
       ) {
         // 　別のアイテムをクリックして違うアイテムの計測を開始するとき
-        console.log("B");
         // startMeasuringItem();
         const option = {
           subItemId,
@@ -521,12 +493,10 @@ const MeasuredItems = () => {
         };
         setMeasure(newMeasure);
       } else {
-        console.log("C");
         console.log("measure.measuringItem", measure.measuringItem);
       }
 
       const tmpMonth = "202112";
-      console.log("newMeasure", newMeasure);
       updateMeasuredTime(user.uid, tmpMonth, newMeasure);
     }
 
@@ -578,17 +548,14 @@ const MeasuredItems = () => {
         newItem.subItems = item.subItems.map((x: any) => {
           return x._id === subItem._id ? { ...x, subItems: newSubItem } : x;
         });
-        console.log("newSubItem", newSubItem);
       }
 
-      console.log("newItem", newItem);
       const newItems = updateListOfObjects({
         listOfObjects: [...items],
         newObject: newItem,
         filter: { key: "_id", value: item._id },
         processType: "REPLACE",
       });
-      console.log("newItems", newItems);
       updateMeasuredItem(user.uid, newItems);
     }
   };
@@ -696,31 +663,6 @@ const MeasuredItems = () => {
         </DialogActions>
       </Dialog>
 
-      {/* 項目追加フォーム */}
-      <Dialog open={newDialog} onClose={closeNewDialog} fullWidth>
-        <DialogTitle>項目の追加</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            計測したいアイテムを追加しよう！
-          </DialogContentText>
-          <TextField
-            autoFocus
-            margin="dense"
-            id="item"
-            label="項目名"
-            type="text"
-            fullWidth
-            variant="standard"
-            value={newItem}
-            onChange={handleOnChange}
-          />
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeNewDialog}>戻る</Button>
-          <Button onClick={handleSendItem}>追加</Button>
-        </DialogActions>
-      </Dialog>
-
       {/* 項目 編集フォーム */}
       <Dialog open={editDialog} onClose={closeEditDialog} fullWidth>
         <DialogTitle>項目の編集</DialogTitle>
@@ -821,7 +763,11 @@ const MeasuredItems = () => {
       </Dialog>
 
       {/* 項目削除確認ダイアログ */}
-      <Dialog open={deleteDialog} onClose={closeNewDialog} fullWidth>
+      <Dialog
+        open={deleteDialog}
+        // onClose={closeNewDialog}
+        fullWidth
+      >
         <DialogTitle>注意</DialogTitle>
         <DialogContent>
           <DialogContentText>
@@ -845,7 +791,6 @@ const MeasuredItems = () => {
             top: 0,
             backgroundColor: "white",
             zIndex: 1200,
-            // boxShadow:1
           }}
         >
           <Button onClick={editModeToggle}>閉じる</Button>
@@ -862,10 +807,9 @@ const MeasuredItems = () => {
               top: 0,
               backgroundColor: "white",
               zIndex: 1200,
-              // boxShadow:1
             }}
           >
-            <Button onClick={openNewDialog}>追加</Button>
+            <AddItem />
             <Button onClick={editModeToggle}>編集</Button>
           </Box>
         </>

@@ -55,7 +55,6 @@ export function minutesToHours(minutes: number) {
   if (minutes >= 60) {
     const hour = orgFloor(minutes / 60, 1);
     const minutesAmari = orgFloor(minutes % (hour * 60), 1);
-    console.log(minutes, hour + minutesAmari / 6 / 10);
     return hour + minutesAmari / 6 / 10;
   } else {
     return minutes / 6 / 10;
@@ -135,11 +134,8 @@ export function updateListOfObjects({
     (item: any) => item[filter.key] === filter.value
   );
   let updateIndex = listOfObjects.indexOf(targetObject); // index 確認
-  console.log(updateIndex);
   if (processType === "REPLACE") {
-    console.log(listOfObjects);
     listOfObjects.splice(updateIndex, 1, newObject); // process
-    console.log(listOfObjects);
   }
 
   return listOfObjects;

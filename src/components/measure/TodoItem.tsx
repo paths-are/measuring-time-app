@@ -67,7 +67,6 @@ type Props = {
 };
 
 const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
-  console.log("TodoItem", todo, itemId);
   const items = useRecoilValue<Items>(measuredItems);
   const [measure, setMeasure] = useRecoilState(measureAtom);
 
@@ -265,7 +264,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
 
     let newItems;
     if (!subItemId) {
-      console.log("AA");
       if (!item.todos) return;
       const todos = [...item.todos];
       const targetTodo = todos.find((todo: Todo) => todo["_id"] === todoId);
@@ -289,7 +287,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
       newItem.todos = newTodos;
     }
     if (subItemId) {
-      console.log("BB");
       const subItem = item.subItems.find(
         (subItem) => subItem["_id"] === subItemId
       );
@@ -314,7 +311,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
       newItem.subItems = item.subItems.map((x: any) => {
         return x._id === subItem._id ? { ...x, todos: newTodos } : x;
       });
-      console.log("newItem", newItem);
     }
     newItems = updateListOfObjects({
       listOfObjects: [...items],
@@ -322,7 +318,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
       filter: { key: "_id", value: item._id },
       processType: "REPLACE",
     });
-    console.log("newItems", newItems);
 
     updateMeasuredItem(user.uid, newItems);
     setNewTodo(newTodoDefaultValues);
@@ -339,7 +334,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
       };
       setMeasure(newMeasure);
       const tmpMonth = "202112";
-      console.log("newMeasure", newMeasure);
       updateMeasuredTime(user.uid, tmpMonth, newMeasure);
     }
   };
@@ -394,7 +388,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
     } else {
       measuringItem.todoId = null;
     }
-    console.log(measuringItem);
     return measuringItem;
   }
   const handleClickItem = ({
@@ -440,7 +433,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
 
       const tmpMonth = "202112";
       const updateKey = "measuringItem";
-      console.log("newMeasure", newMeasure);
       updateMeasuredTime(user.uid, tmpMonth, newMeasure, updateKey);
     } else {
       // アイテムクリック時（計測されている状態）
@@ -450,7 +442,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
         measure.measuringItem?.["todoId"] === todoId
       ) {
         // 同じアイテムをクリックして停止するとき
-        console.log("A");
         const newMeasuringItem = stoppedMeasuringItem();
 
         const newTime = createNewTime(measure.measuringItem);
@@ -466,8 +457,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
         measure.measuringItem?.["todoId"] !== todoId
       ) {
         // 　別のアイテムをクリックして違うアイテムの計測を開始するとき
-        console.log("B");
-        // startMeasuringItem();
         const option = {
           subItemId,
           subItemName: clickedSubItem?.name,
@@ -488,12 +477,10 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
         };
         setMeasure(newMeasure);
       } else {
-        console.log("C");
         console.log("measure.measuringItem", measure.measuringItem);
       }
 
       const tmpMonth = "202112";
-      console.log("newMeasure", newMeasure);
       updateMeasuredTime(user.uid, tmpMonth, newMeasure);
     }
 
@@ -545,17 +532,14 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
         newItem.subItems = item.subItems.map((x: any) => {
           return x._id === subItem._id ? { ...x, subItems: newSubItem } : x;
         });
-        console.log("newSubItem", newSubItem);
       }
 
-      console.log("newItem", newItem);
       const newItems = updateListOfObjects({
         listOfObjects: [...items],
         newObject: newItem,
         filter: { key: "_id", value: item._id },
         processType: "REPLACE",
       });
-      console.log("newItems", newItems);
       updateMeasuredItem(user.uid, newItems);
     }
   };
