@@ -78,14 +78,6 @@ const MeasuredItems = () => {
   const [targetItem, setTargetItem] = React.useState<TargetItem | null>(null);
   const totalTimes = useRecoilValue(totalTimesAtom);
   const [editMode, setEditMode] = React.useState(false);
-  type ClientTodo = Todo & {
-    itemId?: string; // 追加
-    itemName?: string; // 追加
-    subItemId?: string | null; // 追加
-    subItemName?: string | null; // 追加
-    dueDate: Date | number | null; // 上書き
-    finishedDate?: Date | number | null; // 上書き
-  };
 
   const colorList = [
     "#3f51b5",
