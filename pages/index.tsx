@@ -110,7 +110,7 @@ export default function Index() {
   const [editDialog, setEditDialog] = React.useState(false);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
-    console.log(event);
+    console.log(event)
     setValue(newValue);
   };
 
@@ -187,7 +187,6 @@ export default function Index() {
     updateMeasuredTime(user.uid, tmpMonth, newMeasure, updateKey);
   };
   const handleChangeMeasuringItemStartTime = (newValue: any) => {
-    console.log(newValue._d.getTime());
     let newMeasure: any = {};
     newMeasure = {
       ...measure,
@@ -223,12 +222,15 @@ export default function Index() {
   React.useEffect(() => {
     let height = 0;
     for (let fixedId of fixedIds) {
-      console.log(fixedId);
       const ele = document.getElementById(fixedId);
       if (ele) height += ele.clientHeight;
     }
     setFixedHeight(height);
   }, []);
+  
+  React.useEffect(() => {
+    console.log(measureHistory)
+  }, [measureHistory]);
 
   /**
    * アイテム初期化系
@@ -265,7 +267,6 @@ export default function Index() {
         duration = (time.end - time.start) / 1000;
         const itemId = time["itemId"];
         const subItemId = time["subItemId"] || null;
-        if (todoId) console.log(time);
 
         if (!totalTimes[itemId]) totalTimes[itemId] = {};
 
@@ -284,26 +285,19 @@ export default function Index() {
         totalTimes.sum = totalTimes.sum ? totalTimes.sum + duration : duration;
       });
       setTotalTimes(totalTimes);
-      console.log("totalTimes", totalTimes);
     };
 
     const range = {
       start: new Date().setHours(0, 0, 0),
       end: new Date().setHours(24, 0, 0),
     };
-    console.log(range);
     if (user) calculateTotalTimes(range);
   }, [measure.times]);
-
-  React.useEffect(() => {
-    console.log(measureHistory);
-  }, [measureHistory]);
 
   /**
    * times初期化系
    */
   const renderMeasuredTimesTable = (response: any): void => {
-    console.log(response);
     setMeasureHistory(response);
     setMeasure(response);
   };

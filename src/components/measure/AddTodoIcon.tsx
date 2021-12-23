@@ -157,8 +157,6 @@ const AddTodo = ({ itemId, subItemId = null }: Props) => {
     });
   };
   const handleClickAddNewTodoButton = () => {
-    console.log("newTodo", newTodo);
-    console.log(items);
     const item = items.find((item: Item) => item["_id"] === newTodo.itemId);
     if (!item) return;
 
@@ -174,8 +172,6 @@ const AddTodo = ({ itemId, subItemId = null }: Props) => {
     const newItem: Item = { ...item };
     if (!newTodo.subItemId) {
       // アイテムへのTODOの追加
-      console.log("A");
-      console.log("newTodoObj", newTodoObj);
       const newTodos = newItem.todos
         ? [...newItem.todos, newTodoObj]
         : [newTodoObj];
@@ -189,8 +185,6 @@ const AddTodo = ({ itemId, subItemId = null }: Props) => {
     }
     if (newTodo.subItemId) {
       // サブアイテムへのTODOの追加
-      console.log("B");
-      console.log("sub---");
 
       const newSubItems = item.subItems.map((x: SubItem) =>
         x._id === newTodo.subItemId
@@ -200,7 +194,6 @@ const AddTodo = ({ itemId, subItemId = null }: Props) => {
       newItems = items.map((x: Item) =>
         x._id === newTodo.itemId ? { ...x, subItems: newSubItems } : x
       );
-      console.log(newItems);
     }
     updateMeasuredItem(user.uid, newItems);
     setNewTodo(newTodoDefaultValues);

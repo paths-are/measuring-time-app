@@ -128,7 +128,6 @@ const MeasuredTimesTable = React.memo(() => {
     };
 
     setMeasure(newMeasure);
-    console.log("newMeasure", newMeasure);
 
     const tmpMonth = "202112";
     const updateKey = "times";
@@ -266,7 +265,6 @@ const MeasuredTimesTable = React.memo(() => {
 
             const newTimes = [...measure.times];
             newTimes.sort(compare);
-            console.log(newTimes);
 
             const newMeasure = {
               ...measure,
@@ -274,7 +272,6 @@ const MeasuredTimesTable = React.memo(() => {
             };
 
             setMeasure(newMeasure);
-            console.log("newMeasure", newMeasure);
 
             const tmpMonth = "202112";
             const updateKey = "times";

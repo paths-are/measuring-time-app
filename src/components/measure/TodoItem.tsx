@@ -1,21 +1,20 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
-import { Button, TextField, Grid, Typography } from "@mui/material";
+import { Button, TextField, Typography } from "@mui/material";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
-import ExpandMoreOutlinedIcon from "@mui/icons-material/ExpandMoreOutlined";
 import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
-import PlayCircleOutlinedIcon from "@mui/icons-material/PlayCircleOutlined";
-import { formatDate } from "@/src/lib/utils";
 import CheckIcon from "@mui/icons-material/Check";
+import PlayCircleOutlinedIcon from "@mui/icons-material/PlayCircleOutlined";
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 
 import { v4 as uuidv4 } from "uuid";
 import { useUser } from "@/src/lib/auth";
+import { formatDate } from "@/src/lib/utils";
 import { updateMeasuredItem, updateMeasuredTime } from "@/src/lib/firestore";
 import { minutesToHoursDisplay, updateListOfObjects } from "@/src/lib/utils";
 import { useRecoilValue, useRecoilState } from "recoil";
@@ -67,7 +66,6 @@ type Props = {
 };
 
 const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
-  console.log("TodoItem", todo, itemId);
   const items = useRecoilValue<Items>(measuredItems);
   const [measure, setMeasure] = useRecoilState(measureAtom);
 
@@ -265,7 +263,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
 
     let newItems;
     if (!subItemId) {
-      console.log("AA");
       if (!item.todos) return;
       const todos = [...item.todos];
       const targetTodo = todos.find((todo: Todo) => todo["_id"] === todoId);
@@ -289,7 +286,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
       newItem.todos = newTodos;
     }
     if (subItemId) {
-      console.log("BB");
       const subItem = item.subItems.find(
         (subItem) => subItem["_id"] === subItemId
       );
@@ -314,7 +310,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
       newItem.subItems = item.subItems.map((x: any) => {
         return x._id === subItem._id ? { ...x, todos: newTodos } : x;
       });
-      console.log("newItem", newItem);
     }
     newItems = updateListOfObjects({
       listOfObjects: [...items],
@@ -322,7 +317,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
       filter: { key: "_id", value: item._id },
       processType: "REPLACE",
     });
-    console.log("newItems", newItems);
 
     updateMeasuredItem(user.uid, newItems);
     setNewTodo(newTodoDefaultValues);
@@ -339,7 +333,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
       };
       setMeasure(newMeasure);
       const tmpMonth = "202112";
-      console.log("newMeasure", newMeasure);
       updateMeasuredTime(user.uid, tmpMonth, newMeasure);
     }
   };
@@ -394,7 +387,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
     } else {
       measuringItem.todoId = null;
     }
-    console.log(measuringItem);
     return measuringItem;
   }
   const handleClickItem = ({
@@ -440,7 +432,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
 
       const tmpMonth = "202112";
       const updateKey = "measuringItem";
-      console.log("newMeasure", newMeasure);
       updateMeasuredTime(user.uid, tmpMonth, newMeasure, updateKey);
     } else {
       // アイテムクリック時（計測されている状態）
@@ -450,7 +441,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
         measure.measuringItem?.["todoId"] === todoId
       ) {
         // 同じアイテムをクリックして停止するとき
-        console.log("A");
         const newMeasuringItem = stoppedMeasuringItem();
 
         const newTime = createNewTime(measure.measuringItem);
@@ -466,8 +456,6 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
         measure.measuringItem?.["todoId"] !== todoId
       ) {
         // 　別のアイテムをクリックして違うアイテムの計測を開始するとき
-        console.log("B");
-        // startMeasuringItem();
         const option = {
           subItemId,
           subItemName: clickedSubItem?.name,
@@ -488,12 +476,10 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
         };
         setMeasure(newMeasure);
       } else {
-        console.log("C");
         console.log("measure.measuringItem", measure.measuringItem);
       }
 
       const tmpMonth = "202112";
-      console.log("newMeasure", newMeasure);
       updateMeasuredTime(user.uid, tmpMonth, newMeasure);
     }
 
@@ -545,17 +531,14 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
         newItem.subItems = item.subItems.map((x: any) => {
           return x._id === subItem._id ? { ...x, subItems: newSubItem } : x;
         });
-        console.log("newSubItem", newSubItem);
       }
 
-      console.log("newItem", newItem);
       const newItems = updateListOfObjects({
         listOfObjects: [...items],
         newObject: newItem,
         filter: { key: "_id", value: item._id },
         processType: "REPLACE",
       });
-      console.log("newItems", newItems);
       updateMeasuredItem(user.uid, newItems);
     }
   };
@@ -647,29 +630,14 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
           <Button onClick={handleClickUpdateTodoButton}>更新</Button>
         </DialogActions>
       </Dialog>
+
       {((todo.finishedDate === null || todo.finishedDate === undefined
         ? true
         : todo.finishedDate >= new Date().setHours(0, 0, 0) &&
           todo.status === "FINISHED") ||
         todo.status !== "FINISHED") && (
-        <Grid
-          container
-          sx={{
-            my: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "right",
-          }}
-        >
-          <Grid
-            item
-            xs={10}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              mb: 1,
-            }}
-          >
+        <Box>
+          <Box mb={1} display="flex">
             {todo.status === "FINISHED" ? (
               <IconButton
                 onClick={() => {
@@ -765,13 +733,8 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
                 </IconButton>
               )
             ) : null}
-
-            {/* 同じ幅を保つために同じエレメントを非表示で作成。 */}
-            <IconButton sx={{ visibility: "hidden" }}>
-              <ExpandMoreOutlinedIcon />
-            </IconButton>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       )}
     </>
   );
