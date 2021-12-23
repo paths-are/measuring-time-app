@@ -1,21 +1,20 @@
 import * as React from "react";
 import Box from "@mui/material/Box";
-import { Button, TextField, Grid, Typography } from "@mui/material";
+import { Button, TextField, Typography } from "@mui/material";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
 import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
-import ExpandMoreOutlinedIcon from "@mui/icons-material/ExpandMoreOutlined";
 import CircleOutlinedIcon from "@mui/icons-material/CircleOutlined";
-import PlayCircleOutlinedIcon from "@mui/icons-material/PlayCircleOutlined";
-import { formatDate } from "@/src/lib/utils";
 import CheckIcon from "@mui/icons-material/Check";
+import PlayCircleOutlinedIcon from "@mui/icons-material/PlayCircleOutlined";
 import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 
 import { v4 as uuidv4 } from "uuid";
 import { useUser } from "@/src/lib/auth";
+import { formatDate } from "@/src/lib/utils";
 import { updateMeasuredItem, updateMeasuredTime } from "@/src/lib/firestore";
 import { minutesToHoursDisplay, updateListOfObjects } from "@/src/lib/utils";
 import { useRecoilValue, useRecoilState } from "recoil";
@@ -631,29 +630,14 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
           <Button onClick={handleClickUpdateTodoButton}>更新</Button>
         </DialogActions>
       </Dialog>
+
       {((todo.finishedDate === null || todo.finishedDate === undefined
         ? true
         : todo.finishedDate >= new Date().setHours(0, 0, 0) &&
           todo.status === "FINISHED") ||
         todo.status !== "FINISHED") && (
-        <Grid
-          container
-          sx={{
-            my: 1,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "right",
-          }}
-        >
-          <Grid
-            item
-            xs={10}
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              mb: 1,
-            }}
-          >
+        <Box>
+          <Box mb={1} display="flex">
             {todo.status === "FINISHED" ? (
               <IconButton
                 onClick={() => {
@@ -749,13 +733,8 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
                 </IconButton>
               )
             ) : null}
-
-            {/* 同じ幅を保つために同じエレメントを非表示で作成。 */}
-            <IconButton sx={{ visibility: "hidden" }}>
-              <ExpandMoreOutlinedIcon />
-            </IconButton>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       )}
     </>
   );

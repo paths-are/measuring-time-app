@@ -9,6 +9,8 @@ import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import ExpandMoreOutlinedIcon from "@mui/icons-material/ExpandMoreOutlined";
 import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
+import PlayCircleOutlinedIcon from "@mui/icons-material/PlayCircleOutlined";
+import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 
 import { v4 as uuidv4 } from "uuid";
 import { useUser } from "@/src/lib/auth";
@@ -42,7 +44,7 @@ import Select from "@mui/material/Select";
 
 import AddTodoIcon from "@/src/components/measure/AddTodoIcon";
 import TodoItem from "@/src/components/measure/TodoItem";
-import NoteIcon from "@/src/components/measure/NoteIcon";
+import Note from "@/src/components/measure/Note";
 import AddItem from "@/src/components/measure/AddItem";
 
 function createNewTime(measuringItem: MeasuringItem): Time | void {
@@ -586,151 +588,150 @@ const MeasuredItems = () => {
 
         if (!item.isDelete)
           return (
-            <Grid
-              container
-              key={index}
-              sx={{
-                mb: 1,
-                display: "flex",
-                justifyContent: "right",
-              }}
-            >
-              {/* アイテム表示 */}
-              <Grid item xs={12} sx={{ display: "flex" }}>
-                <NoteIcon item={item} />
-                <AddTodoIcon itemId={item._id} />
-                <Button
-                  variant={isActive ? "outlined" : "contained"}
-                  onClick={
-                    editMode
-                      ? () => handleClickEditIcon(item)
-                      : () => handleClickItem({ itemId: _id })
-                  }
-                  sx={{
-                    flexGrow: 1,
-                    mr: 1,
-                    background: editMode
-                      ? item.color
-                      : isActive
-                      ? null
-                      : `linear-gradient(75deg, ${item.color}f3 ${rate}%, ${
-                          item.color
-                        }b0 ${rate === 0 ? 0 : rate + 3}% 100%)`,
-                  }}
-                  fullWidth
-                >
-                  {item.name}
-                  <span style={{ flexGrow: 1 }}></span>
-                  {totalTimeItem === totalTime
-                    ? minutesToHoursDisplay(totalTime)
-                    : `${minutesToHoursDisplay(
-                        totalTimeItem
-                      )}/${minutesToHoursDisplay(totalTime)}`}
-                </Button>
-                {!editMode && (
-                  <IconButton
-                    onClick={() => {
-                      onClickExpandSubItems(_id);
-                    }}
+            // アイテム表示
+            <Box key={index} sx={{ display: "flex" }}>
+              <Box width="100%" mb={2}>
+                <Box display="flex">
+                  {/* <Note item={item} /> */}
+                  {/* <AddTodoIcon itemId={item._id} /> */}
+                  <Button
+                    variant={isActive ? "outlined" : "contained"}
+                    onClick={() => handleClickEditIcon(item)}
                     sx={{
-                      // TODO たぶん、item.todosを変更する必要がある
-                      visibility: item.subItems || item.todos ? null : "hidden",
+                      flexGrow: 1,
+                      mr: 1,
+                      background: isActive
+                        ? null
+                        : `linear-gradient(75deg, ${item.color}f3 ${rate}%, ${
+                            item.color
+                          }b0 ${rate === 0 ? 0 : rate + 3}% 100%)`,
                     }}
+                    fullWidth
                   >
-                    {item.expandSubItems ? (
-                      <CloseOutlinedIcon fontSize="small" />
-                    ) : (
-                      <ExpandMoreOutlinedIcon fontSize="small" />
-                    )}
-                  </IconButton>
-                )}
-              </Grid>
-
-              {/* Todo表示 */}
-              {!editMode &&
-                item.expandSubItems &&
-                item.todos?.map((todo: Todo, index: number) => (
-                  <TodoItem key={index} todo={todo} itemId={item._id} />
-                ))}
-
-              {/* サブアイテム表示 */}
-              {!editMode &&
-                item.expandSubItems &&
-                item.subItems?.map((subItem: SubItem, index: number) => {
-                  const subItemId = subItem["_id"];
-                  const baseTime = 60 * 5; // 1日5時間同じ事やってればすごいということで。（なんとなく）
-
-                  const totalTimeSubItem = totalTimes[_id]?.[subItemId]
-                    ? orgFloor(totalTimes[_id]?.[subItemId] / 60, 2)
-                    : 0;
-                  const rate = (totalTimeSubItem / baseTime) * 100;
-                  return (
-                    <Grid
-                      container
-                      key={index}
-                      sx={{
-                        my: 1,
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "right",
-                      }}
+                    {item.name}
+                    <span style={{ flexGrow: 1 }}></span>
+                    {totalTimeItem === totalTime
+                      ? minutesToHoursDisplay(totalTime)
+                      : `${minutesToHoursDisplay(
+                          totalTimeItem
+                        )}/${minutesToHoursDisplay(totalTime)}`}
+                  </Button>
+                  {measure.measuringItem._id === item._id ? (
+                    <IconButton
+                      onClick={() => handleClickItem({ itemId: _id })}
                     >
-                      {/* サブアイテム */}
-                      <Grid item xs={10} sx={{ display: "flex" }}>
-                        <AddTodoIcon
-                          itemId={item._id}
-                          subItemId={subItem._id}
-                        />
-                        <Button
-                          variant={
-                            measure.measuringItem?.["subItemId"] === subItemId
-                              ? "outlined"
-                              : "contained"
-                          }
-                          onClick={() =>
-                            handleClickItem({ itemId: _id, subItemId })
-                          }
-                          sx={{
-                            flexGrow: 1,
-                            mr: 1,
-                            background: editMode
-                              ? item.color
-                              : measure.measuringItem?.["subItemId"] ===
-                                subItemId
-                              ? null
-                              : `linear-gradient(75deg, ${
-                                  item.color
-                                }f3 ${rate}%, ${item.color}b0 ${
-                                  rate === 0 ? 0 : rate + 3
-                                }% 100%)`,
-                          }}
-                          fullWidth
-                        >
-                          {subItem.name}
-                          <span style={{ flexGrow: 1 }}></span>
-                          {minutesToHoursDisplay(totalTimeSubItem)}
-                        </Button>
-                        {/* 同じ幅を保つために同じエレメントを非表示で作成。 */}
-                        <IconButton sx={{ visibility: "hidden" }}>
-                          <ExpandMoreOutlinedIcon />
-                        </IconButton>
-                      </Grid>
+                      <StopCircleOutlinedIcon />
+                    </IconButton>
+                  ) : (
+                    <IconButton
+                      onClick={() => handleClickItem({ itemId: _id })}
+                    >
+                      <PlayCircleOutlinedIcon />
+                    </IconButton>
+                  )}
+                </Box>
+                {item.expandSubItems && (
+                  <Box width="100%">
+                    <Note item={item} />
 
-                      {/* Todo表示 */}
-                      {subItem.todos?.map((todo: Todo, index: number) => {
-                        return (
-                          <TodoItem
-                            key={index}
-                            todo={todo}
-                            itemId={item._id}
-                            subItemId={subItem._id}
-                          />
-                        );
-                      })}
-                    </Grid>
-                  );
-                })}
-            </Grid>
+                    {/* Todo表示 */}
+                    {item.todos?.map((todo: Todo, index: number) => (
+                      <TodoItem key={index} todo={todo} itemId={item._id} />
+                    ))}
+
+                    {/* サブアイテム表示 */}
+                    {item.subItems?.map((subItem: SubItem, index: number) => {
+                      const subItemId = subItem["_id"];
+                      const baseTime = 60 * 5; // 1日5時間同じ事やってればすごいということで。（なんとなく）
+
+                      const totalTimeSubItem = totalTimes[_id]?.[subItemId]
+                        ? orgFloor(totalTimes[_id]?.[subItemId] / 60, 2)
+                        : 0;
+                      const rate = (totalTimeSubItem / baseTime) * 100;
+                      return (
+                        <Box pl={{ xs: 2, sm: 4 }}>
+                          {/* サブアイテム */}
+                          <Box key={index} display="flex">
+                            <AddTodoIcon
+                              itemId={item._id}
+                              subItemId={subItem._id}
+                            />
+                            <Button
+                              variant={
+                                measure.measuringItem?.["subItemId"] ===
+                                subItemId
+                                  ? "outlined"
+                                  : "contained"
+                              }
+                              onClick={() =>
+                                handleClickItem({
+                                  itemId: _id,
+                                  subItemId,
+                                })
+                              }
+                              sx={{
+                                flexGrow: 1,
+                                mr: 1,
+                                background: editMode
+                                  ? item.color
+                                  : measure.measuringItem?.["subItemId"] ===
+                                    subItemId
+                                  ? null
+                                  : `linear-gradient(75deg, ${
+                                      item.color
+                                    }f3 ${rate}%, ${item.color}b0 ${
+                                      rate === 0 ? 0 : rate + 3
+                                    }% 100%)`,
+                              }}
+                              fullWidth
+                            >
+                              {subItem.name}
+                              <span style={{ flexGrow: 1 }}></span>
+                              {minutesToHoursDisplay(totalTimeSubItem)}
+                            </Button>
+                            {/* 同じ幅を保つために同じエレメントを非表示で作成。 */}
+                            <IconButton sx={{ visibility: "hidden" }}>
+                              <ExpandMoreOutlinedIcon />
+                            </IconButton>
+                            {/* </Grid> */}
+                          </Box>
+
+                          {/* Todo表示 */}
+                          {subItem.todos?.map((todo: Todo, index: number) => {
+                            return (
+                              <TodoItem
+                                key={index}
+                                todo={todo}
+                                itemId={item._id}
+                                subItemId={subItem._id}
+                              />
+                            );
+                          })}
+                        </Box>
+                      );
+                    })}
+                  </Box>
+                )}
+              </Box>
+
+              {/* Expand */}
+              <Box>
+                <IconButton
+                  onClick={() => {
+                    onClickExpandSubItems(_id);
+                  }}
+                  sx={{
+                    visibility: item.subItems || item.todos ? null : "hidden",
+                  }}
+                >
+                  {item.expandSubItems ? (
+                    <CloseOutlinedIcon fontSize="small" />
+                  ) : (
+                    <ExpandMoreOutlinedIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Box>
+            </Box>
           );
       })}
       <Grid container sx={{ mb: 1, display: "flex", alignItems: "center" }}>

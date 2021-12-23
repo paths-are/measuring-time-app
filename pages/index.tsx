@@ -110,6 +110,7 @@ export default function Index() {
   const [editDialog, setEditDialog] = React.useState(false);
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+    console.log(event)
     setValue(newValue);
   };
 
@@ -226,6 +227,10 @@ export default function Index() {
     }
     setFixedHeight(height);
   }, []);
+  
+  React.useEffect(() => {
+    console.log(measureHistory)
+  }, [measureHistory]);
 
   /**
    * アイテム初期化系

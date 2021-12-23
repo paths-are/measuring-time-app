@@ -1,5 +1,5 @@
 import * as React from "react";
-import { Button, TextField } from "@mui/material";
+import { Box, Button, TextField, Typography } from "@mui/material";
 import Dialog from "@mui/material/Dialog";
 import DialogActions from "@mui/material/DialogActions";
 import DialogContent from "@mui/material/DialogContent";
@@ -19,7 +19,7 @@ type Props = {
   item: Item;
 };
 
-const NoteIcon = ({ item }: Props) => {
+const Note = ({ item }: Props) => {
   const items = useRecoilValue<Items>(measuredItems);
 
   const user: any = useUser();
@@ -84,13 +84,28 @@ const NoteIcon = ({ item }: Props) => {
       setTargetItem({ ...targetItem, note: newValue });
     }
   };
-  
+
   return (
     <>
-      <IconButton onClick={() => handleClickNoteIcon(item)}>
-        {item.note ? <DescriptionIcon /> : <InsertDriveFileOutlinedIcon />}
-      </IconButton>
-
+      {/* <Box display="flex"> */}
+      <Box display="flex" maxWidth="100%">
+        <IconButton onClick={() => handleClickNoteIcon(item)}>
+          {item.note ? <DescriptionIcon /> : <InsertDriveFileOutlinedIcon />}
+        </IconButton>
+        <Typography
+          sx={{
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis",
+            display: "flex",
+            alignItems: "center",
+            flexGrow: 1,
+          }}
+        >
+          {item.note.substring(0, 5)}...
+        </Typography>
+      </Box>
+      {/* </Box> */}
       {/* ノート機能 */}
       <Dialog open={noteEditDialog} onClose={closeNoteDialog} fullWidth>
         <DialogTitle>{targetItem?.name}のノート</DialogTitle>
@@ -119,4 +134,4 @@ const NoteIcon = ({ item }: Props) => {
     </>
   );
 };
-export default NoteIcon;
+export default Note;
