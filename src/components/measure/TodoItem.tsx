@@ -667,6 +667,7 @@ const TodoItem = ({ todo, itemId, subItemId = null }: Props) => {
             )}
             <Button
               variant="text"
+              color="inherit"
               sx={{
                 flexGrow: 1,
                 textDecoration:
