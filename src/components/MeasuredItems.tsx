@@ -8,9 +8,6 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import IconButton from "@mui/material/IconButton";
 import ExpandMoreOutlinedIcon from "@mui/icons-material/ExpandMoreOutlined";
-import CloseOutlinedIcon from "@mui/icons-material/CloseOutlined";
-import PlayCircleOutlinedIcon from "@mui/icons-material/PlayCircleOutlined";
-import StopCircleOutlinedIcon from "@mui/icons-material/StopCircleOutlined";
 
 import { v4 as uuidv4 } from "uuid";
 import { useUser } from "@/src/lib/auth";
@@ -80,7 +77,6 @@ const MeasuredItems = () => {
   };
   const [targetItem, setTargetItem] = React.useState<TargetItem | null>(null);
   const totalTimes = useRecoilValue(totalTimesAtom);
-  const [editMode, setEditMode] = React.useState(false);
 
   const colorList = [
     "#3f51b5",
@@ -110,16 +106,6 @@ const MeasuredItems = () => {
   /**
    * Edit
    */
-  const editModeToggle = () => {
-    setEditMode(!editMode);
-  };
-  const handleClickEditIcon = (item: TypeItem): void => {
-    setTargetItem(item);
-    openEditDialog();
-  };
-  const openEditDialog = () => {
-    setEditDialog(true);
-  };
   const closeEditDialog = () => {
     setEditDialog(false);
     setTargetItem(null);
@@ -401,21 +387,6 @@ const MeasuredItems = () => {
     }
   };
 
-  /**
-   * サブアイテム表示機能
-   */
-  const onClickExpandSubItems = (_id: string): void => {
-    const newItems = [...items];
-    let obj: any = newItems.find((x: TypeItem) => x["_id"] === _id);
-    let index = newItems.indexOf(obj);
-
-    let newItem = { ...obj, expandSubItems: !obj.expandSubItems };
-
-    newItems.splice(index, 1, newItem);
-
-    updateMeasuredItem(user.uid, newItems);
-  };
-
   return (
     <>
       {/* 項目 編集フォーム */}
@@ -602,16 +573,15 @@ const MeasuredItems = () => {
                             sx={{
                               flexGrow: 1,
                               mr: 1,
-                              background: editMode
-                                ? item.color
-                                : measure.measuringItem?.["subItemId"] ===
-                                  subItemId
-                                ? null
-                                : `linear-gradient(75deg, ${
-                                    item.color
-                                  }f3 ${rate}%, ${item.color}b0 ${
-                                    rate === 0 ? 0 : rate + 3
-                                  }% 100%)`,
+                              background:
+                                measure.measuringItem?.["subItemId"] ===
+                                subItemId
+                                  ? null
+                                  : `linear-gradient(75deg, ${
+                                      item.color
+                                    }f3 ${rate}%, ${item.color}b0 ${
+                                      rate === 0 ? 0 : rate + 3
+                                    }% 100%)`,
                             }}
                             fullWidth
                           >

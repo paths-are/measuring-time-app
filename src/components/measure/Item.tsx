@@ -42,8 +42,6 @@ import MenuItem from "@mui/material/MenuItem";
 import FormControl from "@mui/material/FormControl";
 import Select from "@mui/material/Select";
 
-import AddItem from "@/src/components/measure/AddItem";
-
 function createNewTime(measuringItem: MeasuringItem): Time | void {
   if (!measuringItem._id || !measuringItem.start) return;
   let newTime: Time = {
@@ -81,7 +79,6 @@ const ItemComponent = ({ item, children }: Props) => {
   };
   const [targetItem, setTargetItem] = React.useState<TargetItem | null>(null);
   const totalTimes = useRecoilValue(totalTimesAtom);
-  const [editMode, setEditMode] = React.useState(false);
 
   const colorList = [
     "#3f51b5",
