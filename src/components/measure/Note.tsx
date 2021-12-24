@@ -87,8 +87,10 @@ const Note = ({ item }: Props) => {
 
   return (
     <>
-      {/* <Box display="flex"> */}
-      <Box display="flex" maxWidth="100%">
+      <Box
+        display="flex"
+        maxWidth="100px"
+      >
         <IconButton onClick={() => handleClickNoteIcon(item)}>
           {item.note ? <DescriptionIcon /> : <InsertDriveFileOutlinedIcon />}
         </IconButton>
@@ -96,16 +98,15 @@ const Note = ({ item }: Props) => {
           sx={{
             whiteSpace: "nowrap",
             overflow: "hidden",
-            textOverflow: "ellipsis",
+            textOverflow: "clip",
             display: "flex",
             alignItems: "center",
             flexGrow: 1,
           }}
         >
-          {item.note.substring(0, 5)}...
+          {/* {item.note} */}
         </Typography>
       </Box>
-      {/* </Box> */}
       {/* ノート機能 */}
       <Dialog open={noteEditDialog} onClose={closeNoteDialog} fullWidth>
         <DialogTitle>{targetItem?.name}のノート</DialogTitle>
